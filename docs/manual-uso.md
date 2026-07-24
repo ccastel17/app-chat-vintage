@@ -55,7 +55,26 @@ Repetir por cada actor/teléfono, cada uno con su propio código.
   "Conectando..." y se cierra solo), **botón rojo** o tocar afuera la
   rechaza
 
-## 4. Problemas comunes
+## 4. Personalizar la apariencia (opcional)
+
+Desde `/control` → **"🎨 Apariencia"** (arriba de la lista de dispositivos):
+
+- Elegí uno de los 3 skins base (**WhatsApp oscuro**, **iMessage claro**,
+  **Vintage**) en el desplegable, o tocá **"+ Nuevo skin"** para armar el
+  tuyo: color de fondo, color de las burbujas, color de los tildes de
+  visto/no visto, tipo y tamaño de letra — la vista previa a la derecha
+  se actualiza al toque
+- **Guardar cambios** lo guarda para usarlo después; **Activar para el
+  rodaje** lo pone en vivo en todos los teléfonos al instante (no hace
+  falta reinstalar ni recargar)
+- Los skins quedan guardados para el próximo rodaje que uses con esta
+  misma app
+
+La foto de avatar del contacto se sube desde el panel de nombre del
+dispositivo (donde ponés el nombre interno/de contacto), botón **"Foto
+de avatar"** — reemplaza el círculo con inicial en el teléfono del actor.
+
+## 5. Problemas comunes
 
 - **No aparece en la lista de `/control`**: el actor no tiene la app
   abierta, o se cortó el wifi — pedile que la vuelva a abrir

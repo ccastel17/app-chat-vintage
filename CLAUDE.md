@@ -43,6 +43,9 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     completa de la conversación, incluido lo que escribe el actor
   - Controles para enviar mensajes (toggle incoming/outgoing), simular
     "escribiendo...", marcar como "visto", simular llamada entrante
+  - Modal "Apariencia" (🎨): editor de skins con preview en vivo tipo
+    mini-teléfono, y botón para subir la foto de avatar del contacto de
+    la room activa
 - `/device/[roomId]` → interfaz del actor
   - Vista de chat en pantalla completa, recibe todo en tiempo real
   - Composer propio: el actor escribe y envía sus mensajes (quedan como
@@ -80,10 +83,43 @@ Una room puede existir sin haber sido nombrada nunca (el actor abrió el
 link directo) — en ese caso `/device` cae a los defaults ("Contacto"/"en
 línea") y `/control` la lista igual como "sin nombrar" (vía Presence).
 
-RLS habilitado en ambas tablas con policies públicas de select/insert/update
-(no hay autenticación de usuarios; el `room_id` actúa como código de acceso
-informal). La `publishable key` de Supabase está pensada para exponerse en
-el cliente, por eso vive directo en `src/shared/supabaseClient.js`.
+`rooms.avatar_url` — foto del contacto (opcional), se sube desde `/control`
+a Supabase Storage (bucket público `avatars`); si no hay foto, `/device`
+muestra un círculo con la inicial del nombre.
+
+Tabla `skins` (paletas/tipografías reutilizables entre rodajes):
+- `id` (uuid, pk), `name` (unique)
+- `mode` — light | dark (define ink/superficie/bordes derivados)
+- `bg`, `bubble_incoming_bg`, `bubble_outgoing_bg`, `tick_color`,
+  `tick_seen_color` — colores en hex
+- `font_family` — system | rounded | mono
+- `font_size` — sm | md | lg
+
+Un solo skin está "activo" para todo el rodaje a la vez, vía
+`app_settings` (fila única, `id=1`, `active_skin_id` → `skins.id`). No es
+por dispositivo — es una decisión de producto (más simple de operar), ver
+`src/shared/skin.js` si en algún momento se necesita por-room.
+
+`src/shared/skin.js` traduce una fila de `skins` a tokens CSS concretos:
+deriva superficie/bordes (mezclando `bg` con blanco o negro según `mode`)
+y el color de texto de cada burbuja (contraste automático por luminancia),
+así el formulario del editor no le pide esos campos al usuario. Lo usan
+`/device` (aplica en `:root` vía `applySkinVars`) y `/control` (preview en
+vivo del editor, aplicado a un contenedor scoped, no a `:root`).
+
+3 skins base vienen cargados en el schema: "WhatsApp oscuro" (el look
+original de la app, activo por default), "iMessage claro", "Vintage"
+(mono, paleta sepia — le pega al nombre del proyecto). Nuevos rodajes que
+reusen este repo arrancan con estos tres.
+
+RLS habilitado en todas las tablas con policies públicas de
+select/insert/update (no hay autenticación de usuarios; el `room_id`
+actúa como código de acceso informal). La `publishable key` de Supabase
+está pensada para exponerse en el cliente, por eso vive directo en
+`src/shared/supabaseClient.js`. Nota: `rooms` y `skins` NO tienen policy
+de `delete` pública salvo `skins` (sí la tiene, para poder borrar skins
+desde el editor) — borrar una `room` hoy requiere entrar al Table Editor
+de Supabase a mano, no hay UI para eso.
 
 La lista de dispositivos en `/control` combina dos fuentes: `rooms` (quién
 tiene nombre, aunque esté offline) + **Supabase Realtime Presence** (canal
@@ -149,5 +185,9 @@ Por `room_id` hay un canal Realtime (`room:<roomId>`) que combina:
   dispositivos (nombre interno + nombre de contacto + estado), crear
   dispositivos de antemano desde `/control`, renombrado en vivo reflejado
   en `/device` sin recargar
+- Apariencia customizable (skins): tabla `skins` + `app_settings` (un
+  skin activo global), editor con preview en vivo en `/control`, 3 skins
+  base para reutilizar entre rodajes, avatar de contacto vía Storage
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
-  placeholder por diseño final, probar instalación real en Android
+  placeholder por diseño final, probar instalación real en Android, UI
+  para borrar dispositivos (hoy requiere Table Editor de Supabase)
