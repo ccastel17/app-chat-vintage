@@ -38,16 +38,29 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
   - Debe verse indistinguible de una app de mensajería real
 
 ## Modelo de datos (Supabase)
-Tabla `messages`:
+Tabla `messages` (única tabla; ver `supabase/schema.sql`):
 - `id` (uuid, pk)
 - `room_id` (text) — identifica la "conversación"/dispositivo
 - `sender` (text) — quién envía (nombre del contacto simulado)
 - `content` (text)
 - `status` (text) — enviado | entregado | visto
+- `direction` (text) — incoming | outgoing (si el mensaje lo "escribe" el
+  contacto simulado o el actor; define el lado de la burbuja en `/device`)
 - `created_at` (timestamp)
 
-Canal de Supabase Realtime por `room_id`, escuchando inserts/updates en
-`messages` filtrados por ese room.
+RLS habilitado con policies públicas de select/insert/update (no hay
+autenticación de usuarios; el `room_id` actúa como código de acceso
+informal). La `publishable key` de Supabase está pensada para exponerse en
+el cliente, por eso vive directo en `src/shared/supabaseClient.js`.
+
+No hay tabla de dispositivos/rooms: `/control` arma la lista dinámicamente
+vía **Supabase Realtime Presence** (canal `presence:devices`) — cada
+`/device/[roomId]` se anuncia al abrirse.
+
+Por `room_id` hay un canal Realtime (`room:<roomId>`) que combina:
+- `postgres_changes` (insert) sobre `messages` filtrado por ese room
+- `broadcast` efímero para `typing`, `incoming_call` y `end_call` (no se
+  persisten en la tabla)
 
 ## Reglas de estilo de código
 - Sin frameworks pesados salvo que se indique explícitamente lo contrario
@@ -69,4 +82,10 @@ Canal de Supabase Realtime por `room_id`, escuchando inserts/updates en
   botón de simular llamada entrante")
 
 ## Estado actual
-Proyecto iniciado desde cero. Ver plan de fases en las notas del equipo.
+- Repo en GitHub: `ccastel17/app-chat-vintage`
+- Proyecto Supabase creado (`App Chat Vintage`, región Stockholm)
+- `/device` y `/control` conectados a Supabase Realtime (mensajes, presencia,
+  "escribiendo...", "visto", llamada entrante) — falta correr
+  `supabase/schema.sql` en el SQL Editor del proyecto
+- Pendiente: UI realista de chat (fase 2), panel de control completo (fase
+  3), integración Playwright/ffmpeg (fase 4), iconos PWA reales

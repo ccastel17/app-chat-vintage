@@ -1,13 +1,12 @@
 // Vista del dispositivo (actor)
-// TODO en la primera sesión con Claude Code:
-//  1. Instalar/importar el cliente de Supabase
-//  2. Leer el room_id desde la URL (/device/[roomId])
-//  3. Suscribirse al canal Realtime filtrado por room_id
-//  4. Pintar mensajes entrantes en #messages con estilo de burbuja
-//  5. Mostrar/ocultar #typing-indicator según eventos del panel de control
+import { supabase, DEVICES_PRESENCE_CHANNEL } from "../shared/supabaseClient.js";
 
 const messagesEl = document.getElementById("messages");
 const typingEl = document.getElementById("typing-indicator");
+const callOverlayEl = document.getElementById("incoming-call-overlay");
+const callerNameEl = document.getElementById("caller-name");
+
+let typingTimeout = null;
 
 function getRoomIdFromUrl() {
   const parts = window.location.pathname.split("/").filter(Boolean);
@@ -15,9 +14,9 @@ function getRoomIdFromUrl() {
   return parts[1] || null;
 }
 
-function renderMessage({ sender, content, status, created_at }) {
+function renderMessage({ sender, content, status, direction, created_at }) {
   const bubble = document.createElement("div");
-  bubble.className = "bubble incoming"; // o "outgoing" según el rol simulado
+  bubble.className = `bubble ${direction === "outgoing" ? "outgoing" : "incoming"}`;
   bubble.innerHTML = `
     <p class="bubble-text"></p>
     <span class="bubble-meta"></span>
@@ -33,10 +32,66 @@ function renderMessage({ sender, content, status, created_at }) {
 
 function showTyping(isTyping) {
   typingEl.classList.toggle("hidden", !isTyping);
+  clearTimeout(typingTimeout);
+  if (isTyping) {
+    // Por si el panel de control no manda el evento de "parar" explícito
+    typingTimeout = setTimeout(() => typingEl.classList.add("hidden"), 6000);
+  }
+}
+
+function showIncomingCall(callerName) {
+  if (!callOverlayEl) return;
+  callerNameEl.textContent = callerName || "Contacto";
+  callOverlayEl.classList.remove("hidden");
+}
+
+function hideIncomingCall() {
+  callOverlayEl?.classList.add("hidden");
 }
 
 const roomId = getRoomIdFromUrl();
-console.log("Device room:", roomId);
 
-// Placeholder — se reemplaza en la sesión de integración con Supabase
-// renderMessage({ sender: "demo", content: "Mensaje de ejemplo", status: "visto", created_at: new Date() });
+if (!roomId) {
+  messagesEl.innerHTML = '<p style="padding:16px;color:#7d8792;">Falta el room_id en la URL (/device/roomId)</p>';
+} else {
+  // Historial existente
+  supabase
+    .from("messages")
+    .select("*")
+    .eq("room_id", roomId)
+    .order("created_at", { ascending: true })
+    .then(({ data, error }) => {
+      if (error) {
+        console.error("Error cargando historial:", error);
+        return;
+      }
+      data.forEach(renderMessage);
+    });
+
+  const roomChannel = supabase
+    .channel(`room:${roomId}`)
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "messages", filter: `room_id=eq.${roomId}` },
+      (payload) => {
+        showTyping(false);
+        renderMessage(payload.new);
+      }
+    )
+    .on("broadcast", { event: "typing" }, ({ payload }) => showTyping(payload.isTyping))
+    .on("broadcast", { event: "incoming_call" }, ({ payload }) => showIncomingCall(payload.callerName))
+    .on("broadcast", { event: "end_call" }, () => hideIncomingCall())
+    .subscribe();
+
+  // Presencia: anunciarse como dispositivo activo para que /control lo liste
+  const presenceChannel = supabase.channel(DEVICES_PRESENCE_CHANNEL, {
+    config: { presence: { key: roomId } },
+  });
+  presenceChannel.subscribe((status) => {
+    if (status === "SUBSCRIBED") {
+      presenceChannel.track({ room_id: roomId, online_at: new Date().toISOString() });
+    }
+  });
+
+  callOverlayEl?.addEventListener("click", hideIncomingCall);
+}

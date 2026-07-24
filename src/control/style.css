@@ -48,3 +48,21 @@ button {
 #quick-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
 #quick-actions button { background: #1f242b; }
+
+#quick-actions button.active { background: #2f6fed; }
+
+#direction-btn { background: #1f242b; white-space: nowrap; }
+
+#devices li {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+#devices li:hover { background: #1a1f26; }
+
+#devices li.active { background: #2f6fed; color: white; }
+
+#devices li.empty { color: #7d8792; cursor: default; }
+#devices li.empty:hover { background: none; }

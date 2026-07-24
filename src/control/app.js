@@ -1,48 +1,114 @@
 // Panel de control (director)
-// TODO en la primera sesión con Claude Code:
-//  1. Instalar/importar el cliente de Supabase
-//  2. Cargar lista de rooms/dispositivos activos en #devices
-//  3. Al seleccionar un dispositivo, guardar el room_id activo
-//  4. #send-btn → insertar en la tabla `messages` con ese room_id
-//  5. #typing-btn / #seen-btn / #call-btn → disparar eventos Realtime
-//     (broadcast, no necesariamente insert en la tabla) para estados
+import { supabase, DEVICES_PRESENCE_CHANNEL } from "../shared/supabaseClient.js";
 
 const devicesEl = document.getElementById("devices");
 const activeRoomLabel = document.getElementById("active-room-label");
 const messageInput = document.getElementById("message-input");
 const sendBtn = document.getElementById("send-btn");
+const directionBtn = document.getElementById("direction-btn");
 const typingBtn = document.getElementById("typing-btn");
 const seenBtn = document.getElementById("seen-btn");
 const callBtn = document.getElementById("call-btn");
 
 let activeRoomId = null;
+let direction = "incoming"; // "incoming" = mensaje del contacto | "outgoing" = mensaje del actor
+let activeRoomChannel = null;
+let typingActive = false;
 
-function setActiveRoom(roomId, label) {
-  activeRoomId = roomId;
-  activeRoomLabel.textContent = label;
+function updateDirectionBtn() {
+  directionBtn.textContent =
+    direction === "incoming" ? "📥 Mensaje del contacto" : "📤 Mensaje del actor";
 }
 
-sendBtn.addEventListener("click", () => {
-  if (!activeRoomId || !messageInput.value.trim()) return;
-  console.log("Enviar a", activeRoomId, ":", messageInput.value);
-  // TODO: insert en Supabase tabla `messages`
+function setActiveRoom(roomId) {
+  activeRoomId = roomId;
+  activeRoomLabel.textContent = roomId;
+  [...devicesEl.children].forEach((li) =>
+    li.classList.toggle("active", li.dataset.roomId === roomId)
+  );
+
+  activeRoomChannel?.unsubscribe();
+  activeRoomChannel = supabase.channel(`room:${roomId}`).subscribe();
+}
+
+function renderDeviceList(roomIds) {
+  devicesEl.innerHTML = "";
+  roomIds.forEach((roomId) => {
+    const li = document.createElement("li");
+    li.textContent = roomId;
+    li.dataset.roomId = roomId;
+    li.className = roomId === activeRoomId ? "active" : "";
+    li.addEventListener("click", () => setActiveRoom(roomId));
+    devicesEl.appendChild(li);
+  });
+  if (roomIds.length === 0) {
+    devicesEl.innerHTML = '<li class="empty">Sin dispositivos conectados</li>';
+  }
+}
+
+const presenceChannel = supabase.channel(DEVICES_PRESENCE_CHANNEL, {
+  config: { presence: { key: "control" } },
+});
+presenceChannel
+  .on("presence", { event: "sync" }, () => {
+    const state = presenceChannel.presenceState();
+    const roomIds = Object.keys(state).filter((key) => key !== "control");
+    renderDeviceList(roomIds);
+  })
+  .subscribe();
+
+directionBtn.addEventListener("click", () => {
+  direction = direction === "incoming" ? "outgoing" : "incoming";
+  updateDirectionBtn();
+});
+updateDirectionBtn();
+
+sendBtn.addEventListener("click", async () => {
+  const content = messageInput.value.trim();
+  if (!activeRoomId || !content) return;
+
+  const { error } = await supabase.from("messages").insert({
+    room_id: activeRoomId,
+    sender: direction === "incoming" ? "contacto" : "actor",
+    content,
+    direction,
+  });
+  if (error) {
+    console.error("Error enviando mensaje:", error);
+    return;
+  }
   messageInput.value = "";
+  setTypingBroadcast(false);
 });
 
-typingBtn.addEventListener("click", () => {
-  console.log("Simular escribiendo en", activeRoomId);
-  // TODO: broadcast Realtime evento "typing"
-});
+function setTypingBroadcast(isTyping) {
+  if (!activeRoomId) return;
+  typingActive = isTyping;
+  typingBtn.classList.toggle("active", isTyping);
+  activeRoomChannel?.send({
+    type: "broadcast",
+    event: "typing",
+    payload: { isTyping },
+  });
+}
 
-seenBtn.addEventListener("click", () => {
-  console.log("Marcar como visto en", activeRoomId);
-  // TODO: update status en Supabase
+typingBtn.addEventListener("click", () => setTypingBroadcast(!typingActive));
+
+seenBtn.addEventListener("click", async () => {
+  if (!activeRoomId) return;
+  const { error } = await supabase
+    .from("messages")
+    .update({ status: "visto" })
+    .eq("room_id", activeRoomId)
+    .eq("direction", "outgoing");
+  if (error) console.error("Error marcando como visto:", error);
 });
 
 callBtn.addEventListener("click", () => {
-  console.log("Simular llamada entrante en", activeRoomId);
-  // TODO: broadcast Realtime evento "incoming_call"
+  if (!activeRoomId) return;
+  activeRoomChannel?.send({
+    type: "broadcast",
+    event: "incoming_call",
+    payload: { callerName: activeRoomLabel.textContent },
+  });
 });
-
-// Placeholder de ejemplo — reemplazar por lista real desde Supabase
-// setActiveRoom("demo-room", "Actor 1");
