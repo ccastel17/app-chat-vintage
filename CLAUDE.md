@@ -11,7 +11,10 @@ Hay dos roles/interfaces:
 
 El director dispara mensajes, estados ("escribiendo...", "visto", llamada
 entrante, etc.) desde el Panel de Control, y estos aparecen en tiempo real en
-la pantalla del actor, como si fuera una conversación real.
+la pantalla del actor, como si fuera una conversación real. El actor también
+puede escribir y enviar sus propios mensajes desde `/device` (tiene su
+propio composer), y esos mensajes se ven en vivo en el hilo del Panel de
+Control — la conversación fluye en ambos sentidos, no solo desde el director.
 
 ## Objetivo del proyecto
 Que el director pueda operar el setup de forma autónoma en el set, sin
@@ -30,11 +33,16 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
 
 ## Arquitectura de rutas
 - `/control` → interfaz del director
-  - Lista de dispositivos/actores conectados (por `room_id`)
-  - Controles para enviar mensajes, simular "escribiendo...", marcar como
-    "visto", disparar notificaciones, simular llamada entrante
+  - Lista de dispositivos/actores conectados (por `room_id`), vía Presence
+  - Hilo de mensajes de la room activa (historial + tiempo real) — visibilidad
+    completa de la conversación, incluido lo que escribe el actor
+  - Controles para enviar mensajes (toggle incoming/outgoing), simular
+    "escribiendo...", marcar como "visto", simular llamada entrante
 - `/device/[roomId]` → interfaz del actor
   - Vista de chat en pantalla completa, recibe todo en tiempo real
+  - Composer propio: el actor escribe y envía sus mensajes (quedan como
+    `direction: outgoing`, mismo valor que usa el director al simular una
+    respuesta del actor — visualmente son indistinguibles)
   - Debe verse indistinguible de una app de mensajería real
 
 ## Modelo de datos (Supabase)
@@ -101,6 +109,9 @@ Por `room_id` hay un canal Realtime (`room:<roomId>`) que combina:
 - `/device` y `/control` conectados a Supabase Realtime (mensajes,
   presencia, "escribiendo...", "visto", llamada entrante) — probado en
   local con `vercel dev` y funcionando
+- El actor puede escribir y enviar mensajes desde `/device` (composer
+  propio); `/control` tiene hilo de mensajes en vivo para ver toda la
+  conversación en ambos sentidos
 - Manifest dinámico por room + íconos placeholder generados
 - Pendiente: UI realista de chat (fase 2), panel de control completo (fase
   3), integración Playwright/ffmpeg (fase 4), reemplazar íconos placeholder
