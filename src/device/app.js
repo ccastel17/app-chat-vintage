@@ -1,5 +1,6 @@
 // Vista del dispositivo (actor)
 import { supabase, DEVICES_PRESENCE_CHANNEL } from "../shared/supabaseClient.js";
+import { applySkinVars } from "../shared/skin.js";
 
 const messagesEl = document.getElementById("messages");
 const contactNameEl = document.getElementById("contact-name");
@@ -16,9 +17,21 @@ const sendBtn = document.getElementById("device-send-btn");
 let typingTimeout = null;
 let typingBubbleEl = null;
 let idleStatus = contactStatusEl.textContent;
+let activeSkinId = null;
+let currentAvatarUrl = null;
 
 function initials(name) {
   return (name || "?").trim().charAt(0).toUpperCase();
+}
+
+function setAvatar(el, name, avatarUrl) {
+  if (avatarUrl) {
+    el.style.backgroundImage = `url("${avatarUrl}")`;
+    el.textContent = "";
+  } else {
+    el.style.backgroundImage = "none";
+    el.textContent = initials(name);
+  }
 }
 
 contactAvatarEl.textContent = initials(contactNameEl.textContent);
@@ -26,10 +39,23 @@ contactAvatarEl.textContent = initials(contactNameEl.textContent);
 function applyRoomInfo(room) {
   if (!room) return;
   contactNameEl.textContent = room.contact_name;
-  contactAvatarEl.textContent = initials(room.contact_name);
+  currentAvatarUrl = room.avatar_url;
+  setAvatar(contactAvatarEl, room.contact_name, currentAvatarUrl);
   idleStatus = room.contact_status;
   if (!typingBubbleEl) {
     contactStatusEl.textContent = idleStatus;
+  }
+}
+
+async function loadActiveSkin() {
+  const { data } = await supabase
+    .from("app_settings")
+    .select("active_skin_id, skins(*)")
+    .eq("id", 1)
+    .maybeSingle();
+  if (data?.skins) {
+    activeSkinId = data.active_skin_id;
+    applySkinVars(document.documentElement, data.skins);
   }
 }
 
@@ -99,7 +125,7 @@ function showIncomingCall(callerName) {
   if (!callOverlayEl) return;
   const name = callerName || "Contacto";
   callerNameEl.textContent = name;
-  callAvatarEl.textContent = initials(name);
+  setAvatar(callAvatarEl, name, currentAvatarUrl);
   callOverlayEl.classList.remove("hidden");
 }
 
@@ -114,6 +140,8 @@ if (!roomId) {
   sendBtn.disabled = true;
   messageInput.disabled = true;
 } else {
+  loadActiveSkin();
+
   // Nombre del contacto simulado, definido desde /control
   supabase
     .from("rooms")
@@ -159,6 +187,15 @@ if (!roomId) {
     .on("broadcast", { event: "typing" }, ({ payload }) => showTyping(payload.isTyping))
     .on("broadcast", { event: "incoming_call" }, ({ payload }) => showIncomingCall(payload.callerName))
     .on("broadcast", { event: "end_call" }, () => hideIncomingCall())
+    .subscribe();
+
+  // Skin activo (colores/fuente): global, no depende del room
+  supabase
+    .channel("skin-changes")
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "app_settings" }, loadActiveSkin)
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "skins" }, (payload) => {
+      if (payload.new.id === activeSkinId) applySkinVars(document.documentElement, payload.new);
+    })
     .subscribe();
 
   // Presencia: anunciarse como dispositivo activo para que /control lo liste

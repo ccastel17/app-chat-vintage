@@ -9,6 +9,8 @@
 <body>
   <div id="control-root">
     <aside id="device-list">
+      <button id="open-skin-modal-btn" type="button" class="skin-modal-btn">🎨 Apariencia</button>
+
       <h2>Dispositivos</h2>
       <ul id="devices"></ul>
 
@@ -26,6 +28,10 @@
       <h2 id="active-room-label">Selecciona un dispositivo</h2>
 
       <div id="room-settings" class="hidden">
+        <span id="edit-avatar-preview" class="avatar-preview"></span>
+        <label class="avatar-upload-label">Foto de avatar
+          <input id="edit-avatar-file" type="file" accept="image/*" />
+        </label>
         <label>Nombre interno (vos)<input id="edit-room-label" placeholder="Actor 1 - Ana" /></label>
         <label>Nombre del contacto (lo ve el actor)<input id="edit-contact-name" placeholder="Mamá" /></label>
         <label>Estado<input id="edit-contact-status" placeholder="en línea" /></label>
@@ -46,6 +52,86 @@
         <button id="call-btn">Simular llamada entrante</button>
       </div>
     </main>
+  </div>
+
+  <div id="skin-modal" class="hidden">
+    <div id="skin-modal-content">
+      <div class="skin-modal-header">
+        <h2>Apariencia</h2>
+        <span id="active-skin-hint"></span>
+        <button id="close-skin-modal-btn" type="button" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="skin-editor">
+        <div class="skin-form">
+          <label>Skin
+            <select id="skin-select"></select>
+          </label>
+          <button id="new-skin-btn" type="button" class="skin-secondary-btn">+ Nuevo skin</button>
+
+          <label>Nombre<input id="skin-name" placeholder="Mi skin" /></label>
+
+          <label>Modo
+            <select id="skin-mode">
+              <option value="dark">Oscuro</option>
+              <option value="light">Claro</option>
+            </select>
+          </label>
+
+          <div class="color-row">
+            <label>Fondo del chat<input type="color" id="skin-bg" /></label>
+            <label>Burbuja entrante<input type="color" id="skin-bubble-in" /></label>
+            <label>Burbuja saliente<input type="color" id="skin-bubble-out" /></label>
+          </div>
+          <div class="color-row">
+            <label>Tilde no visto<input type="color" id="skin-tick" /></label>
+            <label>Tilde visto<input type="color" id="skin-tick-seen" /></label>
+          </div>
+
+          <label>Tipo de letra
+            <select id="skin-font-family">
+              <option value="system">Sistema</option>
+              <option value="rounded">Redondeada</option>
+              <option value="mono">Monoespaciada</option>
+            </select>
+          </label>
+
+          <label>Tamaño de letra
+            <select id="skin-font-size">
+              <option value="sm">Chica</option>
+              <option value="md">Mediana</option>
+              <option value="lg">Grande</option>
+            </select>
+          </label>
+
+          <div class="skin-actions">
+            <button id="save-skin-btn" type="button">Guardar cambios</button>
+            <button id="activate-skin-btn" type="button">Activar para el rodaje</button>
+            <button id="delete-skin-btn" type="button" class="skin-danger-btn">Eliminar</button>
+          </div>
+        </div>
+
+        <div class="skin-preview-wrap">
+          <p class="skin-preview-label">Vista previa</p>
+          <div id="skin-preview-phone">
+            <div class="skin-preview-header">
+              <span id="skin-preview-avatar"></span>
+              <span class="skin-preview-info">
+                <span class="skin-preview-name">Mamá</span>
+                <span class="skin-preview-status">en línea</span>
+              </span>
+            </div>
+            <div class="skin-preview-messages">
+              <div class="bubble incoming"><p class="bubble-text">Hola! todo bien?</p></div>
+              <div class="bubble outgoing">
+                <p class="bubble-text">Sí, todo tranqui</p>
+                <span class="bubble-meta"><span class="bubble-ticks seen">✓✓</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="/control/app.js" type="module"></script>

@@ -1,63 +1,4 @@
--- Ejecutar en Supabase → SQL Editor
--- Tabla principal de mensajes simulados, ver modelo de datos en CLAUDE.md
-
-create table if not exists messages (
-  id uuid primary key default gen_random_uuid(),
-  room_id text not null,
-  sender text not null,
-  content text not null,
-  status text not null default 'enviado' check (status in ('enviado', 'entregado', 'visto')),
-  direction text not null default 'incoming' check (direction in ('incoming', 'outgoing')),
-  created_at timestamptz not null default now()
-);
-
-create index if not exists messages_room_id_created_at_idx
-  on messages (room_id, created_at);
-
--- RLS: la app no tiene autenticación de usuarios (solo el equipo de rodaje
--- accede al panel de control y a los links de /device/[roomId]), así que se
--- habilita acceso público de lectura/escritura protegido por la key
--- publishable. El room_id actúa como código de acceso informal.
-alter table messages enable row level security;
-
-create policy "public read" on messages
-  for select using (true);
-
-create policy "public insert" on messages
-  for insert with check (true);
-
-create policy "public update" on messages
-  for update using (true);
-
--- Habilitar Realtime (postgres_changes) para esta tabla
-alter publication supabase_realtime add table messages;
-
--- Metadata de cada "dispositivo"/conversación: cómo se llama el contacto
--- simulado que ve el actor, y cómo lo identifica el director en /control.
--- No reemplaza Presence (que sigue indicando online/offline en vivo) —
--- rooms es solo el nombre, se puede crear antes o después de que el actor
--- abra el link.
-create table if not exists rooms (
-  room_id text primary key,
-  label text not null,
-  contact_name text not null default 'Contacto',
-  contact_status text not null default 'en línea',
-  avatar_url text,
-  created_at timestamptz not null default now()
-);
-
-alter table rooms enable row level security;
-
-create policy "public read" on rooms
-  for select using (true);
-
-create policy "public insert" on rooms
-  for insert with check (true);
-
-create policy "public update" on rooms
-  for update using (true);
-
-alter publication supabase_realtime add table rooms;
+-- Ejecutar en Supabase → SQL Editor (incremental)
 
 -- Skins: paletas/tipografías reutilizables entre rodajes. Uno solo está
 -- "activo" a la vez (app_settings.active_skin_id) y aplica a todos los
@@ -100,6 +41,9 @@ create policy "public update" on app_settings for update using (true);
 
 alter publication supabase_realtime add table app_settings;
 
+-- Avatar del contacto simulado (identidad del actor, no del skin)
+alter table rooms add column if not exists avatar_url text;
+
 -- 3 skins base para arrancar
 insert into skins (name, mode, bg, bubble_incoming_bg, bubble_outgoing_bg, tick_color, tick_seen_color, font_family, font_size)
 values
@@ -108,6 +52,7 @@ values
   ('Vintage', 'dark', '#2b241c', '#4a3f30', '#c9a35c', '#a08b6a', '#e9c97a', 'mono', 'md')
 on conflict (name) do nothing;
 
+-- Activar "WhatsApp oscuro" (el look que ya tenía la app) por default
 insert into app_settings (id, active_skin_id)
 select 1, id from skins where name = 'WhatsApp oscuro'
 on conflict (id) do update set active_skin_id = excluded.active_skin_id;
