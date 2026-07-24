@@ -51,6 +51,7 @@ async function setActiveRoom(roomId) {
       { event: "INSERT", schema: "public", table: "messages", filter: `room_id=eq.${roomId}` },
       (payload) => {
         if (roomId !== activeRoomId) return;
+        roomMessagesEl.querySelector(".empty")?.remove();
         renderMessage(payload.new);
       }
     )

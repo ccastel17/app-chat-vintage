@@ -27,20 +27,25 @@
   <div id="chat-root">
     <!-- Header simulando contacto -->
     <header id="chat-header">
-      <span id="contact-name">Contacto</span>
-      <span id="contact-status">en línea</span>
+      <span id="contact-avatar"></span>
+      <span id="contact-info">
+        <span id="contact-name">Contacto</span>
+        <span id="contact-status">en línea</span>
+      </span>
     </header>
 
     <!-- Área de mensajes -->
     <main id="messages"></main>
 
-    <!-- Indicador de "escribiendo..." -->
-    <div id="typing-indicator" class="hidden">escribiendo...</div>
-
     <!-- Overlay de llamada entrante -->
     <div id="incoming-call-overlay" class="hidden">
+      <span id="call-avatar"></span>
       <span id="caller-name">Contacto</span>
-      <span class="call-hint">Llamada entrante — toca para descartar</span>
+      <span class="call-kind">Llamada de audio</span>
+      <div class="call-actions">
+        <button id="call-decline-btn" type="button" aria-label="Rechazar">✕</button>
+        <button id="call-accept-btn" type="button" aria-label="Contestar">📞</button>
+      </div>
     </div>
 
     <!-- Composer: el actor escribe y envía sus propios mensajes -->

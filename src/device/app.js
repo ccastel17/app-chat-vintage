@@ -2,13 +2,25 @@
 import { supabase, DEVICES_PRESENCE_CHANNEL } from "../shared/supabaseClient.js";
 
 const messagesEl = document.getElementById("messages");
-const typingEl = document.getElementById("typing-indicator");
+const contactNameEl = document.getElementById("contact-name");
+const contactStatusEl = document.getElementById("contact-status");
+const contactAvatarEl = document.getElementById("contact-avatar");
 const callOverlayEl = document.getElementById("incoming-call-overlay");
+const callAvatarEl = document.getElementById("call-avatar");
 const callerNameEl = document.getElementById("caller-name");
+const callAcceptBtn = document.getElementById("call-accept-btn");
+const callDeclineBtn = document.getElementById("call-decline-btn");
 const messageInput = document.getElementById("device-message-input");
 const sendBtn = document.getElementById("device-send-btn");
 
 let typingTimeout = null;
+let typingBubbleEl = null;
+
+function initials(name) {
+  return (name || "?").trim().charAt(0).toUpperCase();
+}
+
+contactAvatarEl.textContent = initials(contactNameEl.textContent);
 
 function getRoomIdFromUrl() {
   const parts = window.location.pathname.split("/").filter(Boolean);
@@ -16,15 +28,26 @@ function getRoomIdFromUrl() {
   return parts[1] || null;
 }
 
-function renderMessage({ sender, content, status, direction, created_at }) {
+function ticksFor(status) {
+  if (status === "visto") return '<span class="bubble-ticks seen">✓✓</span>';
+  if (status === "entregado") return '<span class="bubble-ticks">✓✓</span>';
+  return '<span class="bubble-ticks">✓</span>';
+}
+
+function renderMessage({ id, content, status, direction, created_at }) {
+  const isOutgoing = direction === "outgoing";
   const bubble = document.createElement("div");
-  bubble.className = `bubble ${direction === "outgoing" ? "outgoing" : "incoming"}`;
+  bubble.className = `bubble ${isOutgoing ? "outgoing" : "incoming"}`;
+  bubble.dataset.id = id;
   bubble.innerHTML = `
     <p class="bubble-text"></p>
-    <span class="bubble-meta"></span>
+    <span class="bubble-meta">
+      <span class="bubble-time"></span>
+      ${isOutgoing ? ticksFor(status) : ""}
+    </span>
   `;
   bubble.querySelector(".bubble-text").textContent = content;
-  bubble.querySelector(".bubble-meta").textContent = new Date(created_at).toLocaleTimeString([], {
+  bubble.querySelector(".bubble-time").textContent = new Date(created_at).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -32,18 +55,40 @@ function renderMessage({ sender, content, status, direction, created_at }) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
+function updateMessageStatus(id, status) {
+  const bubble = messagesEl.querySelector(`[data-id="${id}"]`);
+  const ticksEl = bubble?.querySelector(".bubble-ticks");
+  if (!ticksEl) return;
+  ticksEl.outerHTML = ticksFor(status);
+}
+
 function showTyping(isTyping) {
-  typingEl.classList.toggle("hidden", !isTyping);
   clearTimeout(typingTimeout);
   if (isTyping) {
+    contactStatusEl.textContent = "escribiendo...";
+    contactStatusEl.classList.add("typing");
+    if (!typingBubbleEl) {
+      typingBubbleEl = document.createElement("div");
+      typingBubbleEl.className = "bubble incoming typing";
+      typingBubbleEl.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+      messagesEl.appendChild(typingBubbleEl);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
     // Por si el panel de control no manda el evento de "parar" explícito
-    typingTimeout = setTimeout(() => typingEl.classList.add("hidden"), 6000);
+    typingTimeout = setTimeout(() => showTyping(false), 6000);
+  } else {
+    contactStatusEl.textContent = "en línea";
+    contactStatusEl.classList.remove("typing");
+    typingBubbleEl?.remove();
+    typingBubbleEl = null;
   }
 }
 
 function showIncomingCall(callerName) {
   if (!callOverlayEl) return;
-  callerNameEl.textContent = callerName || "Contacto";
+  const name = callerName || "Contacto";
+  callerNameEl.textContent = name;
+  callAvatarEl.textContent = initials(name);
   callOverlayEl.classList.remove("hidden");
 }
 
@@ -82,6 +127,11 @@ if (!roomId) {
         renderMessage(payload.new);
       }
     )
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "messages", filter: `room_id=eq.${roomId}` },
+      (payload) => updateMessageStatus(payload.new.id, payload.new.status)
+    )
     .on("broadcast", { event: "typing" }, ({ payload }) => showTyping(payload.isTyping))
     .on("broadcast", { event: "incoming_call" }, ({ payload }) => showIncomingCall(payload.callerName))
     .on("broadcast", { event: "end_call" }, () => hideIncomingCall())
@@ -97,7 +147,11 @@ if (!roomId) {
     }
   });
 
-  callOverlayEl?.addEventListener("click", hideIncomingCall);
+  callDeclineBtn.addEventListener("click", hideIncomingCall);
+  callAcceptBtn.addEventListener("click", () => {
+    callerNameEl.textContent = "Conectando...";
+    setTimeout(hideIncomingCall, 1500);
+  });
 
   async function sendMessage() {
     const content = messageInput.value.trim();
