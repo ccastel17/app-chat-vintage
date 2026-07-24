@@ -3,6 +3,7 @@ import { supabase, DEVICES_PRESENCE_CHANNEL } from "../shared/supabaseClient.js"
 
 const devicesEl = document.getElementById("devices");
 const activeRoomLabel = document.getElementById("active-room-label");
+const roomMessagesEl = document.getElementById("room-messages");
 const messageInput = document.getElementById("message-input");
 const sendBtn = document.getElementById("send-btn");
 const directionBtn = document.getElementById("direction-btn");
@@ -20,15 +21,58 @@ function updateDirectionBtn() {
     direction === "incoming" ? "📥 Mensaje del contacto" : "📤 Mensaje del actor";
 }
 
-function setActiveRoom(roomId) {
+function renderMessage({ content, direction, created_at }) {
+  const msg = document.createElement("div");
+  msg.className = `msg ${direction === "outgoing" ? "outgoing" : "incoming"}`;
+  msg.innerHTML = `<span class="msg-text"></span><span class="msg-meta"></span>`;
+  msg.querySelector(".msg-text").textContent = content;
+  msg.querySelector(".msg-meta").textContent = new Date(created_at).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  roomMessagesEl.appendChild(msg);
+  roomMessagesEl.scrollTop = roomMessagesEl.scrollHeight;
+}
+
+async function setActiveRoom(roomId) {
   activeRoomId = roomId;
   activeRoomLabel.textContent = roomId;
   [...devicesEl.children].forEach((li) =>
     li.classList.toggle("active", li.dataset.roomId === roomId)
   );
 
+  roomMessagesEl.innerHTML = '<span class="empty">Cargando…</span>';
+
   activeRoomChannel?.unsubscribe();
-  activeRoomChannel = supabase.channel(`room:${roomId}`).subscribe();
+  activeRoomChannel = supabase
+    .channel(`room:${roomId}`)
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "messages", filter: `room_id=eq.${roomId}` },
+      (payload) => {
+        if (roomId !== activeRoomId) return;
+        renderMessage(payload.new);
+      }
+    )
+    .subscribe();
+
+  const { data, error } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("room_id", roomId)
+    .order("created_at", { ascending: true });
+
+  if (roomId !== activeRoomId) return; // el director cambió de room mientras cargaba
+  roomMessagesEl.innerHTML = "";
+  if (error) {
+    console.error("Error cargando historial:", error);
+    return;
+  }
+  if (data.length === 0) {
+    roomMessagesEl.innerHTML = '<span class="empty">Sin mensajes todavía</span>';
+    return;
+  }
+  data.forEach(renderMessage);
 }
 
 function renderDeviceList(roomIds) {

@@ -5,6 +5,8 @@ const messagesEl = document.getElementById("messages");
 const typingEl = document.getElementById("typing-indicator");
 const callOverlayEl = document.getElementById("incoming-call-overlay");
 const callerNameEl = document.getElementById("caller-name");
+const messageInput = document.getElementById("device-message-input");
+const sendBtn = document.getElementById("device-send-btn");
 
 let typingTimeout = null;
 
@@ -53,6 +55,8 @@ const roomId = getRoomIdFromUrl();
 
 if (!roomId) {
   messagesEl.innerHTML = '<p style="padding:16px;color:#7d8792;">Falta el room_id en la URL (/device/roomId)</p>';
+  sendBtn.disabled = true;
+  messageInput.disabled = true;
 } else {
   // Historial existente
   supabase
@@ -94,4 +98,22 @@ if (!roomId) {
   });
 
   callOverlayEl?.addEventListener("click", hideIncomingCall);
+
+  async function sendMessage() {
+    const content = messageInput.value.trim();
+    if (!content) return;
+    messageInput.value = "";
+    const { error } = await supabase.from("messages").insert({
+      room_id: roomId,
+      sender: "actor",
+      content,
+      direction: "outgoing",
+    });
+    if (error) console.error("Error enviando mensaje:", error);
+  }
+
+  sendBtn.addEventListener("click", sendMessage);
+  messageInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMessage();
+  });
 }

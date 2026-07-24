@@ -42,6 +42,12 @@
       <span id="caller-name">Contacto</span>
       <span class="call-hint">Llamada entrante — toca para descartar</span>
     </div>
+
+    <!-- Composer: el actor escribe y envía sus propios mensajes -->
+    <footer id="device-composer">
+      <input id="device-message-input" type="text" placeholder="Mensaje" autocomplete="off" />
+      <button id="device-send-btn" type="button" aria-label="Enviar">➤</button>
+    </footer>
   </div>
 
   <script src="/device/app.js" type="module"></script>

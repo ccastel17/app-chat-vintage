@@ -22,7 +22,40 @@ body {
 
 #devices { list-style: none; display: flex; flex-direction: column; gap: 4px; }
 
-#control-panel { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+#control-panel { padding: 24px; display: flex; flex-direction: column; gap: 20px; height: 100vh; }
+
+#room-messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: #0b0f14;
+  border-radius: 8px;
+  border: 1px solid #1f242b;
+}
+
+#room-messages .empty { color: #7d8792; font-size: 13px; }
+
+#room-messages .msg {
+  max-width: 70%;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+#room-messages .msg.incoming { align-self: flex-start; background: #1f242b; }
+#room-messages .msg.outgoing { align-self: flex-end; background: #2f6fed; }
+
+#room-messages .msg-meta {
+  display: block;
+  font-size: 10px;
+  color: #c3d0e0;
+  margin-top: 2px;
+}
 
 #composer { display: flex; gap: 8px; }
 
