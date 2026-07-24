@@ -7,19 +7,25 @@ Este es el scaffolding inicial para empezar el proyecto con Claude Code.
 ```
 app-chat-rodaje/
 ├── CLAUDE.md              ← contexto persistente para Claude Code (¡no borrar!)
+├── api/
+│   └── manifest.js         ← manifest PWA dinámico por room_id (Vercel function)
 ├── public/
-│   ├── manifest.json      ← hace la app instalable (PWA)
 │   ├── sw.js               ← service worker mínimo
-│   └── icons/              ← faltan los iconos reales (192px y 512px, normal y maskable)
+│   └── icons/              ← placeholders generados, reemplazar por diseño final
 ├── src/
+│   ├── shared/
+│   │   └── supabaseClient.js
 │   ├── device/              ← vista del actor (/device/[roomId])
 │   │   ├── index.html
-│   │   ├── app.js           ← stub, falta conectar Supabase Realtime
+│   │   ├── app.js           ← conectado a Supabase Realtime
 │   │   └── style.css
 │   └── control/              ← vista del director (/control)
 │       ├── index.html
-│       ├── app.js           ← stub, falta conectar Supabase
+│       ├── app.js           ← conectado a Supabase
 │       └── style.css
+├── supabase/
+│   └── schema.sql           ← correr en el SQL Editor de Supabase
+└── vercel.json              ← rutas limpias /control y /device/[roomId]
 ```
 
 ## Cómo empezar con Claude Code

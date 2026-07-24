@@ -5,8 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
   <title>Chat</title>
 
-  <!-- PWA -->
-  <link rel="manifest" href="/manifest.json" />
+  <!-- PWA: manifest dinámico por room_id, para que "Instalar app" arme un
+       ícono que abre directo a esta conversación (ver api/manifest.js) -->
+  <script>
+    (function () {
+      var roomId = location.pathname.split("/").filter(Boolean)[1] || "";
+      document.write('<link rel="manifest" href="/api/manifest?room=' + encodeURIComponent(roomId) + '">');
+    })();
+  </script>
   <meta name="theme-color" content="#0b0f14" />
 
   <!-- iOS: Safari no respeta bien el manifest, hay que declarar esto aparte -->

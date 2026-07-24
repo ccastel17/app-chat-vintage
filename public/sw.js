@@ -3,7 +3,7 @@
 // ampliar más adelante si el wifi del set es poco confiable.
 
 const CACHE_NAME = "chat-rodaje-v1";
-const APP_SHELL = ["/", "/device/", "/control/", "/manifest.json"];
+const APP_SHELL = ["/device/style.css", "/device/app.js", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

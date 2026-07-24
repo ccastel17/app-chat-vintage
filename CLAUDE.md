@@ -81,11 +81,27 @@ Por `room_id` hay un canal Realtime (`room:<roomId>`) que combina:
 - Mensaje claro de qué fase/feature se tocó (ej: "feat(control): agregar
   botón de simular llamada entrante")
 
+## Instalación en teléfonos (Android)
+- Cada actor instala su propia room desde el navegador (Chrome → "Instalar
+  app" / "Agregar a pantalla de inicio"), abriendo antes `/device/[roomId]`
+  con el `roomId` que le corresponde.
+- El manifest es dinámico (`api/manifest.js`, function de Vercel): cada
+  room sirve un manifest con `start_url` propio, así el ícono instalado
+  abre siempre esa conversación, sin que el actor tenga que navegar.
+- `display: standalone` (no `fullscreen`): oculta la barra del navegador
+  pero deja la barra de estado del sistema, igual que una app real.
+- `/control` no se instala, se usa desde navegador normal (decisión del
+  equipo — no tiene manifest ni ícono).
+
 ## Estado actual
-- Repo en GitHub: `ccastel17/app-chat-vintage`
-- Proyecto Supabase creado (`App Chat Vintage`, región Stockholm)
-- `/device` y `/control` conectados a Supabase Realtime (mensajes, presencia,
-  "escribiendo...", "visto", llamada entrante) — falta correr
-  `supabase/schema.sql` en el SQL Editor del proyecto
+- Repo en GitHub: `ccastel17/app-chat-vintage` (conectado a Vercel, deploy
+  automático en cada push a `main`)
+- Proyecto Supabase creado (`App Chat Vintage`, región Stockholm), schema
+  aplicado
+- `/device` y `/control` conectados a Supabase Realtime (mensajes,
+  presencia, "escribiendo...", "visto", llamada entrante) — probado en
+  local con `vercel dev` y funcionando
+- Manifest dinámico por room + íconos placeholder generados
 - Pendiente: UI realista de chat (fase 2), panel de control completo (fase
-  3), integración Playwright/ffmpeg (fase 4), iconos PWA reales
+  3), integración Playwright/ffmpeg (fase 4), reemplazar íconos placeholder
+  por diseño final, probar instalación real en Android
