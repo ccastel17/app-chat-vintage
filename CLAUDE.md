@@ -113,6 +113,11 @@ Por `room_id` hay un canal Realtime (`room:<roomId>`) que combina:
   propio); `/control` tiene hilo de mensajes en vivo para ver toda la
   conversación en ambos sentidos
 - Manifest dinámico por room + íconos placeholder generados
-- Pendiente: UI realista de chat (fase 2), panel de control completo (fase
-  3), integración Playwright/ffmpeg (fase 4), reemplazar íconos placeholder
-  por diseño final, probar instalación real en Android
+- UI realista de `/device` (fase 2): avatar con inicial, header que
+  cambia a "escribiendo..." en vivo, burbujas con cola y animación de
+  entrada, checks de estado (✓/✓✓/✓✓ visto), burbuja de "escribiendo..."
+  con puntitos animados, pantalla de llamada entrante con avatar
+  pulsante y botones aceptar/rechazar
+- Pendiente: panel de control completo (fase 3), integración
+  Playwright/ffmpeg (fase 4), reemplazar íconos placeholder por diseño
+  final, probar instalación real en Android
