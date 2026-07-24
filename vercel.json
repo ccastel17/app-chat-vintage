@@ -1,0 +1,20 @@
+{
+  "outputDirectory": ".",
+  "rewrites": [
+    { "source": "/manifest.json", "destination": "/public/manifest.json" },
+    { "source": "/sw.js", "destination": "/public/sw.js" },
+    { "source": "/icons/:path*", "destination": "/public/icons/:path*" },
+
+    { "source": "/shared/:path*", "destination": "/src/shared/:path*" },
+
+    { "source": "/control/style.css", "destination": "/src/control/style.css" },
+    { "source": "/control/app.js", "destination": "/src/control/app.js" },
+    { "source": "/control", "destination": "/src/control/index.html" },
+
+    { "source": "/device/style.css", "destination": "/src/device/style.css" },
+    { "source": "/device/app.js", "destination": "/src/device/app.js" },
+    { "source": "/device/:roomId", "destination": "/src/device/index.html" },
+
+    { "source": "/", "destination": "/src/control/index.html" }
+  ]
+}
