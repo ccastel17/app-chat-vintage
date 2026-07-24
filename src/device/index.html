@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>Chat</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0b0f14" />
+
+  <!-- iOS: Safari no respeta bien el manifest, hay que declarar esto aparte -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Chat" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div id="chat-root">
+    <!-- Header simulando contacto -->
+    <header id="chat-header">
+      <span id="contact-name">Contacto</span>
+      <span id="contact-status">en línea</span>
+    </header>
+
+    <!-- Área de mensajes -->
+    <main id="messages"></main>
+
+    <!-- Indicador de "escribiendo..." -->
+    <div id="typing-indicator" class="hidden">escribiendo...</div>
+  </div>
+
+  <script src="./app.js" type="module"></script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js");
+    }
+  </script>
+</body>
+</html>

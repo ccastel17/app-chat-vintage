@@ -1,0 +1,50 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #12161c;
+  color: #e9edf1;
+}
+
+#control-root {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  height: 100vh;
+}
+
+#device-list {
+  background: #0b0f14;
+  padding: 16px;
+  border-right: 1px solid #1f242b;
+}
+
+#device-list h2 { font-size: 14px; margin-bottom: 12px; color: #9aa4af; }
+
+#devices { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+
+#control-panel { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+#composer { display: flex; gap: 8px; }
+
+#message-input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #1f242b;
+  background: #1a1f26;
+  color: #e9edf1;
+}
+
+button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #2f6fed;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#quick-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+#quick-actions button { background: #1f242b; }

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Panel de Control — Chat Rodaje</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div id="control-root">
+    <aside id="device-list">
+      <h2>Dispositivos</h2>
+      <ul id="devices"></ul>
+    </aside>
+
+    <main id="control-panel">
+      <h2 id="active-room-label">Selecciona un dispositivo</h2>
+
+      <div id="composer">
+        <input id="message-input" type="text" placeholder="Escribir mensaje..." />
+        <button id="send-btn">Enviar</button>
+      </div>
+
+      <div id="quick-actions">
+        <button id="typing-btn">Simular "escribiendo..."</button>
+        <button id="seen-btn">Marcar como visto</button>
+        <button id="call-btn">Simular llamada entrante</button>
+      </div>
+    </main>
+  </div>
+
+  <script src="./app.js" type="module"></script>
+</body>
+</html>
