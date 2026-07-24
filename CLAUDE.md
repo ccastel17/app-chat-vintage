@@ -33,7 +33,12 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
 
 ## Arquitectura de rutas
 - `/control` → interfaz del director
-  - Lista de dispositivos/actores conectados (por `room_id`), vía Presence
+  - Lista de dispositivos (rooms nombradas + Presence para saber quién está
+    online ahora); botón "+ Nuevo dispositivo" para crear una room de
+    antemano, antes de que el actor abra el link
+  - Panel para nombrar/renombrar la room activa: nombre interno (para el
+    director) y nombre de contacto (lo que ve el actor) — funciona igual
+    para nombrar de antemano que para renombrar una que ya está conectada
   - Hilo de mensajes de la room activa (historial + tiempo real) — visibilidad
     completa de la conversación, incluido lo que escribe el actor
   - Controles para enviar mensajes (toggle incoming/outgoing), simular
@@ -46,7 +51,11 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
   - Debe verse indistinguible de una app de mensajería real
 
 ## Modelo de datos (Supabase)
-Tabla `messages` (única tabla; ver `supabase/schema.sql`):
+Ver `supabase/schema.sql` (schema completo) y `supabase/migrations/` (cambios
+incrementales ya aplicados — no volver a correr `schema.sql` entero contra
+una base existente, `create policy` no soporta `if not exists`).
+
+Tabla `messages`:
 - `id` (uuid, pk)
 - `room_id` (text) — identifica la "conversación"/dispositivo
 - `sender` (text) — quién envía (nombre del contacto simulado)
@@ -56,17 +65,35 @@ Tabla `messages` (única tabla; ver `supabase/schema.sql`):
   contacto simulado o el actor; define el lado de la burbuja en `/device`)
 - `created_at` (timestamp)
 
-RLS habilitado con policies públicas de select/insert/update (no hay
-autenticación de usuarios; el `room_id` actúa como código de acceso
+Tabla `rooms` (nombre de cada dispositivo/conversación):
+- `room_id` (text, pk) — el mismo valor que `messages.room_id` y el
+  segmento de la URL `/device/[roomId]`
+- `label` (text) — nombre interno, solo lo ve el director en `/control`
+- `contact_name` (text) — nombre del contacto simulado, lo ve el actor en
+  el header de `/device`
+- `contact_status` (text) — texto de estado bajo el nombre (ej. "en línea",
+  "últ. vez hoy a las 14:32"); se pisa temporalmente por "escribiendo..."
+  cuando corresponde, sin perder el valor guardado
+- `created_at` (timestamp)
+
+Una room puede existir sin haber sido nombrada nunca (el actor abrió el
+link directo) — en ese caso `/device` cae a los defaults ("Contacto"/"en
+línea") y `/control` la lista igual como "sin nombrar" (vía Presence).
+
+RLS habilitado en ambas tablas con policies públicas de select/insert/update
+(no hay autenticación de usuarios; el `room_id` actúa como código de acceso
 informal). La `publishable key` de Supabase está pensada para exponerse en
 el cliente, por eso vive directo en `src/shared/supabaseClient.js`.
 
-No hay tabla de dispositivos/rooms: `/control` arma la lista dinámicamente
-vía **Supabase Realtime Presence** (canal `presence:devices`) — cada
-`/device/[roomId]` se anuncia al abrirse.
+La lista de dispositivos en `/control` combina dos fuentes: `rooms` (quién
+tiene nombre, aunque esté offline) + **Supabase Realtime Presence** (canal
+`presence:devices`, quién está online ahora mismo) — cada `/device/[roomId]`
+se anuncia al abrirse.
 
 Por `room_id` hay un canal Realtime (`room:<roomId>`) que combina:
-- `postgres_changes` (insert) sobre `messages` filtrado por ese room
+- `postgres_changes` (insert/update) sobre `messages` filtrado por ese room
+- `postgres_changes` (update) sobre `rooms` filtrado por ese room — así
+  `/device` refleja un renombre en vivo sin recargar
 - `broadcast` efímero para `typing`, `incoming_call` y `end_call` (no se
   persisten en la tabla)
 
@@ -118,6 +145,9 @@ Por `room_id` hay un canal Realtime (`room:<roomId>`) que combina:
   entrada, checks de estado (✓/✓✓/✓✓ visto), burbuja de "escribiendo..."
   con puntitos animados, pantalla de llamada entrante con avatar
   pulsante y botones aceptar/rechazar
-- Pendiente: panel de control completo (fase 3), integración
-  Playwright/ffmpeg (fase 4), reemplazar íconos placeholder por diseño
-  final, probar instalación real en Android
+- Panel de control completo (fase 3): tabla `rooms` para nombrar
+  dispositivos (nombre interno + nombre de contacto + estado), crear
+  dispositivos de antemano desde `/control`, renombrado en vivo reflejado
+  en `/device` sin recargar
+- Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
+  placeholder por diseño final, probar instalación real en Android
