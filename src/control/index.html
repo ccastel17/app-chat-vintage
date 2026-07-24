@@ -11,10 +11,26 @@
     <aside id="device-list">
       <h2>Dispositivos</h2>
       <ul id="devices"></ul>
+
+      <button id="new-device-btn" type="button">+ Nuevo dispositivo</button>
+      <form id="new-device-form" class="hidden">
+        <input id="new-room-id" placeholder="código (ej: actor1)" autocomplete="off" />
+        <div class="form-actions">
+          <button type="submit">Crear</button>
+          <button type="button" id="cancel-new-device-btn">Cancelar</button>
+        </div>
+      </form>
     </aside>
 
     <main id="control-panel">
       <h2 id="active-room-label">Selecciona un dispositivo</h2>
+
+      <div id="room-settings" class="hidden">
+        <label>Nombre interno (vos)<input id="edit-room-label" placeholder="Actor 1 - Ana" /></label>
+        <label>Nombre del contacto (lo ve el actor)<input id="edit-contact-name" placeholder="Mamá" /></label>
+        <label>Estado<input id="edit-contact-status" placeholder="en línea" /></label>
+        <button id="save-room-settings-btn" type="button">Guardar</button>
+      </div>
 
       <div id="room-messages"></div>
 

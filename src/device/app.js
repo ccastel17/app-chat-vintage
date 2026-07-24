@@ -15,12 +15,23 @@ const sendBtn = document.getElementById("device-send-btn");
 
 let typingTimeout = null;
 let typingBubbleEl = null;
+let idleStatus = contactStatusEl.textContent;
 
 function initials(name) {
   return (name || "?").trim().charAt(0).toUpperCase();
 }
 
 contactAvatarEl.textContent = initials(contactNameEl.textContent);
+
+function applyRoomInfo(room) {
+  if (!room) return;
+  contactNameEl.textContent = room.contact_name;
+  contactAvatarEl.textContent = initials(room.contact_name);
+  idleStatus = room.contact_status;
+  if (!typingBubbleEl) {
+    contactStatusEl.textContent = idleStatus;
+  }
+}
 
 function getRoomIdFromUrl() {
   const parts = window.location.pathname.split("/").filter(Boolean);
@@ -77,7 +88,7 @@ function showTyping(isTyping) {
     // Por si el panel de control no manda el evento de "parar" explícito
     typingTimeout = setTimeout(() => showTyping(false), 6000);
   } else {
-    contactStatusEl.textContent = "en línea";
+    contactStatusEl.textContent = idleStatus;
     contactStatusEl.classList.remove("typing");
     typingBubbleEl?.remove();
     typingBubbleEl = null;
@@ -103,6 +114,14 @@ if (!roomId) {
   sendBtn.disabled = true;
   messageInput.disabled = true;
 } else {
+  // Nombre del contacto simulado, definido desde /control
+  supabase
+    .from("rooms")
+    .select("*")
+    .eq("room_id", roomId)
+    .maybeSingle()
+    .then(({ data }) => applyRoomInfo(data));
+
   // Historial existente
   supabase
     .from("messages")
@@ -131,6 +150,11 @@ if (!roomId) {
       "postgres_changes",
       { event: "UPDATE", schema: "public", table: "messages", filter: `room_id=eq.${roomId}` },
       (payload) => updateMessageStatus(payload.new.id, payload.new.status)
+    )
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "rooms", filter: `room_id=eq.${roomId}` },
+      (payload) => applyRoomInfo(payload.new)
     )
     .on("broadcast", { event: "typing" }, ({ payload }) => showTyping(payload.isTyping))
     .on("broadcast", { event: "incoming_call" }, ({ payload }) => showIncomingCall(payload.callerName))

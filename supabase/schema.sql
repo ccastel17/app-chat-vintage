@@ -31,3 +31,29 @@ create policy "public update" on messages
 
 -- Habilitar Realtime (postgres_changes) para esta tabla
 alter publication supabase_realtime add table messages;
+
+-- Metadata de cada "dispositivo"/conversación: cómo se llama el contacto
+-- simulado que ve el actor, y cómo lo identifica el director en /control.
+-- No reemplaza Presence (que sigue indicando online/offline en vivo) —
+-- rooms es solo el nombre, se puede crear antes o después de que el actor
+-- abra el link.
+create table if not exists rooms (
+  room_id text primary key,
+  label text not null,
+  contact_name text not null default 'Contacto',
+  contact_status text not null default 'en línea',
+  created_at timestamptz not null default now()
+);
+
+alter table rooms enable row level security;
+
+create policy "public read" on rooms
+  for select using (true);
+
+create policy "public insert" on rooms
+  for insert with check (true);
+
+create policy "public update" on rooms
+  for update using (true);
+
+alter publication supabase_realtime add table rooms;

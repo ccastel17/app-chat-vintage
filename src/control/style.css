@@ -99,3 +99,86 @@ button {
 
 #devices li.empty { color: #7d8792; cursor: default; }
 #devices li.empty:hover { background: none; }
+
+#devices li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#devices .online-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4a5261;
+  flex-shrink: 0;
+}
+
+#devices li.online .online-dot { background: #34c759; }
+
+#devices .device-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#devices .device-sub { color: #7d8792; font-size: 11px; }
+
+#new-device-btn {
+  width: 100%;
+  margin-top: 12px;
+  background: #1f242b;
+  font-size: 13px;
+  padding: 8px 10px;
+}
+
+#new-device-form {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#new-device-form.hidden { display: none; }
+
+#new-device-form input {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #1f242b;
+  background: #1a1f26;
+  color: #e9edf1;
+  font-size: 13px;
+}
+
+#new-device-form .form-actions { display: flex; gap: 6px; }
+#new-device-form .form-actions button { flex: 1; padding: 8px; font-size: 13px; }
+#cancel-new-device-btn { background: #1f242b; }
+
+#room-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  background: #0b0f14;
+  border-radius: 8px;
+  border: 1px solid #1f242b;
+}
+
+#room-settings.hidden { display: none; }
+
+#room-settings label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #7d8792;
+  flex: 1;
+  min-width: 140px;
+}
+
+#room-settings input {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #1f242b;
+  background: #1a1f26;
+  color: #e9edf1;
+  font-size: 13px;
+}
+
+#save-room-settings-btn { font-size: 13px; padding: 8px 14px; }
