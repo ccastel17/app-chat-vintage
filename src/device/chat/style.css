@@ -36,7 +36,7 @@ html, body {
 }
 
 #chat-header {
-  padding: env(safe-area-inset-top, 22px) 16px 12px;
+  padding: calc(env(safe-area-inset-top, 0px) + 22px) 16px 12px;
   background: var(--skin-surface);
   display: flex;
   align-items: center;
@@ -243,7 +243,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px env(safe-area-inset-bottom, 18px);
+  padding: 8px 12px calc(env(safe-area-inset-bottom, 0px) + 18px);
   background: var(--skin-surface);
   border-top: 1px solid var(--skin-line);
 }
