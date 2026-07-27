@@ -20,6 +20,7 @@ const directionBtn = document.getElementById("direction-btn");
 const typingBtn = document.getElementById("typing-btn");
 const seenBtn = document.getElementById("seen-btn");
 const callBtn = document.getElementById("call-btn");
+const clearChatBtn = document.getElementById("clear-chat-btn");
 
 const newDeviceBtn = document.getElementById("new-device-btn");
 const newDeviceForm = document.getElementById("new-device-form");
@@ -66,14 +67,22 @@ function activeConversation() {
   return conversations.get(activeConversationId) || null;
 }
 
-function renderMessage(conversation, { content, image_url, direction, sender_room_id, created_at }) {
+async function deleteMessage(id) {
+  roomMessagesEl.querySelector(`[data-id="${id}"]`)?.remove();
+  const { error } = await supabase.from("messages").delete().eq("id", id);
+  if (error) console.error("Error borrando mensaje:", error);
+}
+
+function renderMessage(conversation, { id, content, image_url, direction, sender_room_id, created_at }) {
   const outgoing = isOutgoing(conversation, { direction, sender_room_id }, conversation.room_id);
   const msg = document.createElement("div");
   msg.className = `msg ${outgoing ? "outgoing" : "incoming"}`;
+  msg.dataset.id = id;
   msg.innerHTML = `
     ${image_url ? '<img class="msg-image" alt="Foto" />' : ""}
     ${content ? '<span class="msg-text"></span>' : ""}
     <span class="msg-meta"></span>
+    <button type="button" class="msg-delete-btn" title="Eliminar mensaje">✕</button>
   `;
   if (image_url) msg.querySelector(".msg-image").src = image_url;
   if (content) msg.querySelector(".msg-text").textContent = content;
@@ -81,6 +90,7 @@ function renderMessage(conversation, { content, image_url, direction, sender_roo
     hour: "2-digit",
     minute: "2-digit",
   });
+  msg.querySelector(".msg-delete-btn").addEventListener("click", () => deleteMessage(id));
   roomMessagesEl.appendChild(msg);
   roomMessagesEl.scrollTop = roomMessagesEl.scrollHeight;
 }
@@ -136,6 +146,7 @@ function applyConversationModeUI(conversation) {
   typingBtn.disabled = !conversation || isLinked;
   seenBtn.disabled = !conversation || isLinked;
   callBtn.disabled = !conversation;
+  clearChatBtn.disabled = !conversation;
 }
 
 function renderConversationSelect() {
@@ -184,6 +195,17 @@ async function setActiveConversation(conversationId) {
         if (conversationId !== activeConversationId) return;
         roomMessagesEl.querySelector(".empty")?.remove();
         renderMessage(conversation, payload.new);
+      }
+    )
+    .on(
+      "postgres_changes",
+      { event: "DELETE", schema: "public", table: "messages", filter: `thread_id=eq.${threadId}` },
+      (payload) => {
+        if (conversationId !== activeConversationId) return;
+        roomMessagesEl.querySelector(`[data-id="${payload.old.id}"]`)?.remove();
+        if (!roomMessagesEl.querySelector(".msg")) {
+          roomMessagesEl.innerHTML = '<span class="empty">Sin mensajes todavía</span>';
+        }
       }
     )
     .subscribe();
@@ -426,6 +448,16 @@ seenBtn.addEventListener("click", async () => {
     .eq("thread_id", conversation.thread_id)
     .eq("direction", "outgoing");
   if (error) console.error("Error marcando como visto:", error);
+});
+
+clearChatBtn.addEventListener("click", async () => {
+  const conversation = activeConversation();
+  if (!conversation) return;
+  if (!confirm(`¿Vaciar todos los mensajes de "${conversation.contact_name}"? No se puede deshacer.`)) return;
+
+  roomMessagesEl.innerHTML = '<span class="empty">Sin mensajes todavía</span>';
+  const { error } = await supabase.from("messages").delete().eq("thread_id", conversation.thread_id);
+  if (error) console.error("Error vaciando el chat:", error);
 });
 
 callBtn.addEventListener("click", () => {

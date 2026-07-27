@@ -67,6 +67,10 @@ create table if not exists messages (
 create index if not exists messages_thread_id_created_at_idx
   on messages (thread_id, created_at);
 
+-- Full: el filtro por thread_id de los canales Realtime necesita el "old
+-- record" completo en los eventos delete (por default solo trae la pk)
+alter table messages replica identity full;
+
 alter table messages enable row level security;
 
 create policy "public read" on messages for select using (true);

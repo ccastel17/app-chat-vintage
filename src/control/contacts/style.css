@@ -208,3 +208,33 @@ button {
 #link-candidates li.empty:hover { background: #0b0f14; }
 
 #close-link-modal-btn { background: #1f242b; width: 100%; }
+
+/* ---------- responsive: móvil / tablet ---------- */
+@media (max-width: 860px) {
+  #contacts-root {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    height: auto;
+    min-height: calc(100vh - 44px);
+  }
+
+  #device-list {
+    border-right: none;
+    border-bottom: 1px solid #1f242b;
+    padding: 12px;
+    min-width: 0;
+  }
+
+  #devices { flex-direction: row; overflow-x: auto; padding-bottom: 2px; min-width: 0; }
+  #devices li { flex-shrink: 0; }
+
+  #contacts-panel { padding: 14px; gap: 14px; min-width: 0; }
+
+  .conversation-card { flex-wrap: wrap; }
+}
+
+@media (max-width: 480px) {
+  #top-bar { padding: 0 10px; }
+  .top-bar-brand { font-size: 12px; }
+  #contacts-panel { padding: 10px; }
+}

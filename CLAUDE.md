@@ -68,7 +68,20 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
       simular "escribiendo...", marcar como "visto", simular llamada)
     - **linkeada**: hilo de solo lectura (mensajes reales entre dos
       actores) — composer, toggle y controles de simular
-      deshabilitados/ocultos, excepto "Simular llamada entrante"
+      deshabilitados/ocultos, excepto "Simular llamada entrante" y borrar
+      mensajes (ver abajo)
+  - Borrado de mensajes: ✕ por burbuja en el hilo (individual) y "🗑️
+    Vaciar chat" arriba de los controles (borra todo el `thread_id`
+    activo, con confirmación — no se puede deshacer). Disponible en
+    conversaciones simuladas y linkeadas por igual. Se propaga en vivo a
+    `/device/chat` (por eso `messages` tiene `replica identity full`: el
+    filtro por `thread_id` de Realtime necesita el "old record" completo
+    para decidir a quién le llega un evento de `delete`, que por default
+    solo trae la primary key)
+  - Responsive: en pantallas angostas (`≤860px`) la lista de dispositivos
+    pasa de columna lateral a tira horizontal scrolleable arriba, para
+    poder operar el panel desde el celular o una tablet además de una
+    notebook
   - Modal "Apariencia" (🎨): editor de skins con preview en vivo tipo
     mini-teléfono
 - `/control/contacts` → gestión de la lista de chats de cada dispositivo
@@ -82,6 +95,7 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     dispositivo (que solo se usa como valor inicial al crear el link)
   - "🔗 + Linkear con otro actor" crea DOS conversaciones (una en la lista
     de cada dispositivo) que comparten `thread_id`
+  - Responsive, mismo criterio que `/control`
 - `/device/[roomId]` → **lista de chats** del actor (home, como WhatsApp)
   - Cada fila: avatar, nombre de contacto, preview del último mensaje
   - Tocar una fila navega a `/device/[roomId]/chat/[conversationId]`
@@ -304,6 +318,10 @@ la lista de conversaciones).
   `linked`, de solo lectura). Un mensaje puede tener foto sin texto,
   texto sin foto, o ambos. Probado end-to-end con Playwright en los tres
   sentidos: director→actor, actor→director, y actor↔actor real
+- Borrado de mensajes desde `/control` (individual y "Vaciar chat" por
+  thread), propagado en vivo a `/device/chat`; y `/control` +
+  `/control/contacts` responsive para poder operarse desde celular o
+  tablet, no solo notebook
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
   placeholder por diseño final, probar instalación real en Android, UI
   para borrar dispositivos (hoy requiere Table Editor de Supabase)

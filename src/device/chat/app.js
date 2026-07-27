@@ -197,6 +197,13 @@ if (!roomId || !conversationId) {
       )
       .on(
         "postgres_changes",
+        { event: "DELETE", schema: "public", table: "messages", filter: `thread_id=eq.${threadId}` },
+        (payload) => {
+          messagesEl.querySelector(`[data-id="${payload.old.id}"]`)?.remove();
+        }
+      )
+      .on(
+        "postgres_changes",
         { event: "UPDATE", schema: "public", table: "conversations", filter: `id=eq.${conversationId}` },
         (payload) => {
           Object.assign(conversation, payload.new);
