@@ -41,18 +41,20 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
 
 ## Arquitectura de rutas
 - `/` → landing del proyecto (`src/home/`): copy de qué es, botón grande a
-  `/control`, grilla de accesos directos a `/device/[roomId]` por cada
-  actor ya creado (lee `rooms` en vivo), y un resumen de "cómo funciona".
-  Pensada para compartir con quien va a probar el producto
+  `/control`, grilla de accesos por actor ya creado con botón **"Copiar
+  link"** (clipboard, para pasarle la URL real de instalación al actor
+  por WhatsApp/lo que sea) y "Abrir →" (para que el director lo pruebe),
+  y un resumen de "cómo funciona". Pensada para compartir con quien va a
+  probar el producto
 - `/control` → mensajería en vivo del director
   - Lista de dispositivos (rooms + Presence para saber quién está online
     ahora); botón "+ Nuevo dispositivo" para crear uno de antemano; ícono
     👁 por dispositivo que abre su lista de chats (`/device/[roomId]`) en
     una pestaña nueva
-  - La lista de dispositivos muestra directamente el `room_id` (el código
-    que se elige al crear el dispositivo) — no hay "nombre interno" ni
-    ninguna otra edición a nivel dispositivo; toda la identidad de contacto
-    vive en `conversations`, ver más abajo
+  - Panel "Nombre del actor" (`rooms.label`) arriba de todo: cómo identifica
+    el director a ese dispositivo en los paneles — nunca lo ve el actor, no
+    tiene relación con `conversations.contact_name` (eso es lo que el actor
+    sí ve, por chat). Si no se completa, la UI cae al `room_id` crudo
   - Selector de conversación del dispositivo activo (desplegable "Hablando
     en nombre de", 💬 simulada / 🔗 linkeada — antes eran pestañas, se
     cambió a desplegable porque no dejaba claro con qué contacto se estaba
@@ -95,12 +97,14 @@ incrementales ya aplicados — no volver a correr `schema.sql` entero contra
 una base existente, `create policy` no soporta `if not exists`).
 
 Tabla `rooms` (identidad del dispositivo físico, no del contacto):
-- `room_id` (text, pk) — el segmento de la URL `/device/[roomId]`, y lo
-  que se muestra en toda la UI del director para identificar el
-  dispositivo (no hay "nombre interno" aparte, se sacó por confuso)
-- `label` (text, NOT NULL) — legacy, ya no se lee ni edita desde ningún
-  panel; se sigue insertando igual a `room_id` al crear un dispositivo
-  solo para satisfacer la constraint, sin significado propio
+- `room_id` (text, pk) — el segmento de la URL `/device/[roomId]`; **no
+  se puede editar después de creado** (rompería la PWA ya instalada en
+  el teléfono del actor, que tiene esta URL en su manifest/start_url)
+- `label` (text, NOT NULL) — "Nombre del actor": cómo lo identifica el
+  director en los paneles (ej. "Ana"). Se inserta igual a `room_id` al
+  crear el dispositivo y se puede renombrar libremente después — a
+  diferencia de `room_id`, esto no rompe nada porque no es parte de
+  ninguna URL. Toda la UI del director muestra `label || room_id`
 - `created_at` (timestamp)
 
 Tabla `conversations` (una fila = una entrada en la lista de chats de un
@@ -268,8 +272,15 @@ la lista de conversaciones).
   se está hablando; ícono 👁 por dispositivo en `/control` y
   `/control/contacts` para abrir su lista de chats en una pestaña nueva
 - Landing en `/` (`src/home/`) para compartir con quien prueba el
-  producto: copy, CTA a `/control`, grilla de accesos a cada actor, y
-  "cómo funciona" resumido
+  producto: copy, CTA a `/control`, grilla de accesos a cada actor con
+  botón "Copiar link" (URL real de instalación) y "Abrir →", y "cómo
+  funciona" resumido
+- "Nombre del actor" (`rooms.label`): se había sacado del todo por
+  parecer redundante, pero sin él no había forma de identificar un
+  dispositivo con algo más memorable que el `room_id` crudo — se repuso
+  arriba de todo en `/control`, con aclaración de que es solo para el
+  director. Usado con fallback a `room_id` en `/control`,
+  `/control/contacts` y la landing
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
   placeholder por diseño final, probar instalación real en Android, UI
   para borrar dispositivos (hoy requiere Table Editor de Supabase)
