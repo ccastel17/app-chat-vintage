@@ -33,7 +33,13 @@ function renderDeviceList() {
     .forEach((room) => {
       const li = document.createElement("li");
       li.className = room.room_id === activeRoomId ? "active" : "";
-      li.textContent = room.label;
+      li.innerHTML = `
+        <span class="device-label"></span>
+        <a class="view-chats-link" target="_blank" rel="noopener" title="Ver lista de chats de este actor">👁</a>
+      `;
+      li.querySelector(".device-label").textContent = room.label;
+      li.querySelector(".view-chats-link").href = `/device/${room.room_id}`;
+      li.querySelector(".view-chats-link").addEventListener("click", (e) => e.stopPropagation());
       li.addEventListener("click", () => selectRoom(room.room_id));
       devicesEl.appendChild(li);
     });

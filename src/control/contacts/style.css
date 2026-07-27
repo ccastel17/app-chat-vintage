@@ -37,7 +37,24 @@ body {
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
+
+.device-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.view-chats-link {
+  flex-shrink: 0;
+  opacity: 0.6;
+  text-decoration: none;
+  font-size: 13px;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.view-chats-link:hover { opacity: 1; background: rgba(255, 255, 255, 0.1); }
 
 #devices li:hover { background: #1a1f26; }
 #devices li.active { background: #2f6fed; color: white; }
