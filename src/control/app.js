@@ -5,7 +5,8 @@ import { isOutgoing } from "../shared/conversation.js";
 
 const devicesEl = document.getElementById("devices");
 const activeRoomLabel = document.getElementById("active-room-label");
-const conversationTabsEl = document.getElementById("conversation-tabs");
+const conversationSelectWrap = document.getElementById("conversation-select-wrap");
+const conversationSelect = document.getElementById("conversation-select");
 const linkedHintEl = document.getElementById("linked-hint");
 const roomMessagesEl = document.getElementById("room-messages");
 const composerEl = document.getElementById("composer");
@@ -92,27 +93,28 @@ function applyConversationModeUI(conversation) {
   callBtn.disabled = !conversation;
 }
 
-function renderConversationTabs() {
-  conversationTabsEl.innerHTML = "";
+function renderConversationSelect() {
   const items = [...conversations.values()];
   if (items.length === 0) {
-    conversationTabsEl.classList.add("hidden");
+    conversationSelectWrap.classList.add("hidden");
     return;
   }
-  conversationTabsEl.classList.remove("hidden");
+  conversationSelectWrap.classList.remove("hidden");
+  conversationSelect.innerHTML = "";
   items.forEach((conversation) => {
-    const li = document.createElement("li");
-    li.className = conversation.id === activeConversationId ? "active" : "";
-    li.innerHTML = `<span class="kind-icon">${conversation.kind === "linked" ? "🔗" : "💬"}</span><span></span>`;
-    li.querySelector("span:last-child").textContent = conversation.contact_name;
-    li.addEventListener("click", () => setActiveConversation(conversation.id));
-    conversationTabsEl.appendChild(li);
+    const opt = document.createElement("option");
+    opt.value = conversation.id;
+    opt.textContent = `${conversation.kind === "linked" ? "🔗" : "💬"} ${conversation.contact_name}`;
+    conversationSelect.appendChild(opt);
   });
+  if (activeConversationId) conversationSelect.value = activeConversationId;
 }
+
+conversationSelect.addEventListener("change", () => setActiveConversation(conversationSelect.value));
 
 async function setActiveConversation(conversationId) {
   activeConversationId = conversationId;
-  renderConversationTabs();
+  renderConversationSelect();
   const conversation = activeConversation();
   applyConversationModeUI(conversation);
 
@@ -168,7 +170,7 @@ async function loadConversationsForRoom(roomId) {
   } else {
     data.forEach((c) => conversations.set(c.id, c));
   }
-  renderConversationTabs();
+  renderConversationSelect();
   const first = [...conversations.keys()][0] || null;
   await setActiveConversation(first);
 }
@@ -197,7 +199,7 @@ async function setActiveRoom(roomId) {
         } else {
           conversations.set(payload.new.id, payload.new);
         }
-        renderConversationTabs();
+        renderConversationSelect();
         if (!activeConversationId) {
           setActiveConversation([...conversations.keys()][0] || null);
         }
