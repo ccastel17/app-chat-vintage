@@ -51,10 +51,13 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     ahora); botón "+ Nuevo dispositivo" para crear uno de antemano; ícono
     👁 por dispositivo que abre su lista de chats (`/device/[roomId]`) en
     una pestaña nueva
-  - Panel "Nombre del actor" (`rooms.label`) arriba de todo: cómo identifica
-    el director a ese dispositivo en los paneles — nunca lo ve el actor, no
-    tiene relación con `conversations.contact_name` (eso es lo que el actor
-    sí ve, por chat). Si no se completa, la UI cae al `room_id` crudo
+  - Panel "Nombre del actor" (`rooms.label` + `rooms.avatar_url`) arriba de
+    todo: cómo identifica el director a ese dispositivo en los paneles —
+    nunca lo ve el actor, no tiene relación con `conversations.contact_name`
+    (eso es lo que el actor sí ve, por chat). Si no se completa, la UI cae
+    al `room_id` crudo. La foto también sirve como default al crear un
+    nuevo link con otro actor (cada lado la puede sobreescribir después
+    desde `/control/contacts`, igual que el nombre)
   - Selector de conversación del dispositivo activo (desplegable "Hablando
     en nombre de", 💬 simulada / 🔗 linkeada — antes eran pestañas, se
     cambió a desplegable porque no dejaba claro con qué contacto se estaba
@@ -105,6 +108,9 @@ Tabla `rooms` (identidad del dispositivo físico, no del contacto):
   crear el dispositivo y se puede renombrar libremente después — a
   diferencia de `room_id`, esto no rompe nada porque no es parte de
   ninguna URL. Toda la UI del director muestra `label || room_id`
+- `avatar_url` (text, nullable) — foto del actor como persona (no
+  confundir con `conversations.avatar_url`, que es la foto de un
+  contacto puntual). Se usa como default al linkear con otro actor
 - `created_at` (timestamp)
 
 Tabla `conversations` (una fila = una entrada en la lista de chats de un
