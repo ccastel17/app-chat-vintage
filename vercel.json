@@ -22,6 +22,8 @@
     { "source": "/device/app.js", "destination": "/src/device/app.js" },
     { "source": "/device/:roomId", "destination": "/src/device/index.html" },
 
-    { "source": "/", "destination": "/src/control/index.html" }
+    { "source": "/home/style.css", "destination": "/src/home/style.css" },
+    { "source": "/home/app.js", "destination": "/src/home/app.js" },
+    { "source": "/", "destination": "/src/home/index.html" }
   ]
 }

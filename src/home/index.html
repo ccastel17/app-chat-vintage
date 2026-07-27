@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chat Vintage — prop de rodaje</title>
+  <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="stylesheet" href="/home/style.css" />
+</head>
+<body>
+  <div class="page">
+
+    <header class="hero">
+      <div class="clapper" aria-hidden="true"></div>
+      <div class="hero-body">
+        <p class="eyebrow">Prop de rodaje — app de mensajería simulada</p>
+        <h1>Chat Vintage</h1>
+        <p class="tagline">
+          Desde acá el director crea un dispositivo por actor, arma su lista
+          de chats —contactos inventados o conversaciones reales entre dos
+          actores— y cambia el aspecto visual completo de la app, todo en
+          vivo y sin tocar código.
+        </p>
+        <a href="/control" class="cta-primary">🎬 Entrar al Panel de Control</a>
+      </div>
+    </header>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Actores</h2>
+        <p class="section-hint">Accesos directos a la lista de chats de cada dispositivo ya creado.</p>
+      </div>
+      <div id="actors-grid" class="actors-grid">
+        <p class="loading">Cargando…</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Cómo funciona</h2>
+      </div>
+      <ol class="how-steps">
+        <li>
+          <span class="step-n">1</span>
+          <div>
+            <p class="step-title">Crear un dispositivo por actor</p>
+            <p class="step-desc">Desde <a href="/control">Panel de Control</a> → "+ Nuevo dispositivo". Cada uno tiene su propio link, que instala como app en el Android del actor.</p>
+          </div>
+        </li>
+        <li>
+          <span class="step-n">2</span>
+          <div>
+            <p class="step-title">Armar su lista de chats</p>
+            <p class="step-desc">Desde <a href="/control/contacts">Contactos</a>: contactos simulados (los escribís vos) o linkear a otro actor real (mensajería real entre los dos, en vivo).</p>
+          </div>
+        </li>
+        <li>
+          <span class="step-n">3</span>
+          <div>
+            <p class="step-title">Operar en vivo</p>
+            <p class="step-desc">Desde el Panel de Control elegís dispositivo y conversación, mandás mensajes, simulás "escribiendo…", "visto" y llamadas entrantes.</p>
+          </div>
+        </li>
+        <li>
+          <span class="step-n">4</span>
+          <div>
+            <p class="step-title">Personalizar la apariencia</p>
+            <p class="step-desc">"🎨 Apariencia" en el Panel de Control: elegís entre varios skins o armás el tuyo — colores, tipografía, tamaño de letra.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <footer class="page-footer">
+      <span>Chat Vintage — prop de rodaje, no es una app de mensajería real</span>
+    </footer>
+
+  </div>
+
+  <script src="/home/app.js" type="module"></script>
+</body>
+</html>
