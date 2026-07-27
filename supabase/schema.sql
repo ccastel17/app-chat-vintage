@@ -61,6 +61,7 @@ create table if not exists messages (
   image_url text,
   status text not null default 'enviado' check (status in ('enviado', 'entregado', 'visto')),
   direction text check (direction in ('incoming', 'outgoing')),
+  injected_by_director boolean not null default false,
   created_at timestamptz not null default now()
 );
 

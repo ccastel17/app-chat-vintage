@@ -17,6 +17,7 @@ const sendBtn = document.getElementById("send-btn");
 const imageInput = document.getElementById("image-input");
 const attachBtn = document.getElementById("attach-btn");
 const directionBtn = document.getElementById("direction-btn");
+const linkedHintOtherNameEl = document.getElementById("linked-hint-other-name");
 const typingBtn = document.getElementById("typing-btn");
 const seenBtn = document.getElementById("seen-btn");
 const callBtn = document.getElementById("call-btn");
@@ -73,10 +74,10 @@ async function deleteMessage(id) {
   if (error) console.error("Error borrando mensaje:", error);
 }
 
-function renderMessage(conversation, { id, content, image_url, direction, sender_room_id, created_at }) {
+function renderMessage(conversation, { id, content, image_url, direction, sender_room_id, injected_by_director, created_at }) {
   const outgoing = isOutgoing(conversation, { direction, sender_room_id }, conversation.room_id);
   const msg = document.createElement("div");
-  msg.className = `msg ${outgoing ? "outgoing" : "incoming"}`;
+  msg.className = `msg ${outgoing ? "outgoing" : "incoming"} ${injected_by_director ? "injected" : ""}`.trim();
   msg.dataset.id = id;
   msg.innerHTML = `
     ${image_url ? '<img class="msg-image" alt="Foto" />' : ""}
@@ -86,10 +87,9 @@ function renderMessage(conversation, { id, content, image_url, direction, sender
   `;
   if (image_url) msg.querySelector(".msg-image").src = image_url;
   if (content) msg.querySelector(".msg-text").textContent = content;
-  msg.querySelector(".msg-meta").textContent = new Date(created_at).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const time = new Date(created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  msg.querySelector(".msg-meta").textContent = injected_by_director ? `🎬 ${time}` : time;
+  if (injected_by_director) msg.title = "Escrito por el director en nombre del actor";
   msg.querySelector(".msg-delete-btn").addEventListener("click", () => deleteMessage(id));
   roomMessagesEl.appendChild(msg);
   roomMessagesEl.scrollTop = roomMessagesEl.scrollHeight;
@@ -140,13 +140,16 @@ function updateDirectionBtn() {
 
 function applyConversationModeUI(conversation) {
   const isLinked = conversation?.kind === "linked";
-  composerEl.classList.toggle("hidden", !conversation || isLinked);
+  composerEl.classList.toggle("hidden", !conversation);
   directionBtn.classList.toggle("hidden", !conversation || isLinked);
   linkedHintEl.classList.toggle("hidden", !isLinked);
   typingBtn.disabled = !conversation || isLinked;
   seenBtn.disabled = !conversation || isLinked;
   callBtn.disabled = !conversation;
   clearChatBtn.disabled = !conversation;
+  if (isLinked) {
+    linkedHintOtherNameEl.textContent = `como ${rooms.get(conversation.linked_room_id)?.label || conversation.linked_room_id}`;
+  }
 }
 
 function renderConversationSelect() {
@@ -399,16 +402,28 @@ directionBtn.addEventListener("click", () => {
 });
 updateDirectionBtn();
 
+// En simuladas el director define incoming/outgoing con el toggle; en
+// linkeadas no hay "dirección" — el mensaje se guarda como si lo hubiera
+// escrito el OTRO actor (linked_room_id), nunca el dueño de esta lista
+// (si ese estuviera disponible no haría falta inyectar nada). Se marca
+// con injected_by_director para poder distinguirlo solo en /control.
+function messagePayloadFor(conversation, extra) {
+  const payload = { thread_id: conversation.thread_id, ...extra };
+  if (conversation.kind === "linked") {
+    payload.sender_room_id = conversation.linked_room_id;
+    payload.injected_by_director = true;
+  } else {
+    payload.direction = direction;
+  }
+  return payload;
+}
+
 sendBtn.addEventListener("click", async () => {
   const content = messageInput.value.trim();
   const conversation = activeConversation();
-  if (!conversation || conversation.kind === "linked" || !content) return;
+  if (!conversation || !content) return;
 
-  const { error } = await supabase.from("messages").insert({
-    thread_id: conversation.thread_id,
-    content,
-    direction,
-  });
+  const { error } = await supabase.from("messages").insert(messagePayloadFor(conversation, { content }));
   if (error) {
     console.error("Error enviando mensaje:", error);
     return;
@@ -421,7 +436,7 @@ imageInput.addEventListener("change", async () => {
   const file = imageInput.files[0];
   imageInput.value = "";
   const conversation = activeConversation();
-  if (!file || !conversation || conversation.kind === "linked") return;
+  if (!file || !conversation) return;
 
   let imageUrl;
   try {
@@ -430,12 +445,9 @@ imageInput.addEventListener("change", async () => {
     console.error("Error subiendo foto:", error);
     return;
   }
-  const { error } = await supabase.from("messages").insert({
-    thread_id: conversation.thread_id,
-    content: "",
-    image_url: imageUrl,
-    direction,
-  });
+  const { error } = await supabase
+    .from("messages")
+    .insert(messagePayloadFor(conversation, { content: "", image_url: imageUrl }));
   if (error) console.error("Error enviando foto:", error);
 });
 

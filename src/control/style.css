@@ -75,6 +75,10 @@ body {
 #room-messages .msg.incoming { align-self: flex-start; background: #1f242b; }
 #room-messages .msg.outgoing { align-self: flex-end; background: #2f6fed; }
 
+/* Mensaje que el director mandó en nombre de un actor en una linkeada —
+   marca visible solo acá, invisible para los actores */
+#room-messages .msg.injected { outline: 1px dashed #c9a35c; outline-offset: -1px; }
+
 .msg-delete-btn {
   position: absolute;
   top: 2px;
@@ -370,6 +374,7 @@ button {
   font-weight: 600;
 }
 
+#linked-hint-other-name { color: #c9a35c; }
 
 #linked-hint {
   font-size: 12px;

@@ -73,10 +73,21 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     composer, sin relación visual clara con el selector). Al elegir una:
     - **simulada**: hilo + composer + controles (toggle incoming/outgoing,
       simular "escribiendo...", marcar como "visto", simular llamada)
-    - **linkeada**: hilo de solo lectura (mensajes reales entre dos
-      actores) — composer, toggle y controles de simular
-      deshabilitados/ocultos, excepto "Simular llamada entrante" y borrar
-      mensajes (ver abajo)
+    - **linkeada**: hilo en vivo (mensajes reales entre dos actores) —
+      toggle y controles de simular deshabilitados/ocultos (no aplican:
+      no hay "direction" que definir, ya está escribiendo/typing es
+      orgánico), excepto "Simular llamada entrante" y borrar mensajes
+      (ver abajo). El composer SÍ está habilitado, a modo de excepción:
+      lo que se escriba se guarda con `sender_room_id` = el OTRO actor
+      (`linked_room_id`, nunca el dueño de la lista que se está mirando
+      — si ese estuviera disponible no haría falta inyectar nada) y
+      `injected_by_director = true`. Para los dos actores es
+      indistinguible de un mensaje real (ni siquiera el propio actor
+      "suplantado" lo nota en su dispositivo); en `/control` se ve
+      marcado con 🎬 y un borde punteado, solo ahí, para que el
+      director pueda diferenciar después qué fue orgánico. Pensado para
+      cuando un actor se queda sin batería/señal a mitad de escena y no
+      hay margen para frenar la toma
   - Borrado de mensajes: ✕ por burbuja en el hilo (individual) y "🗑️
     Vaciar chat" arriba de los controles (borra todo el `thread_id`
     activo, con confirmación — no se puede deshacer). Disponible en
@@ -192,6 +203,10 @@ Tabla `messages` (agrupados por `thread_id`, no por dispositivo):
 - `status` (text) — enviado | entregado | visto
 - `direction` (text, nullable) — incoming | outgoing. Solo se usa en
   threads `simulated`, donde el director lo define explícitamente
+- `injected_by_director` (boolean, default false) — true cuando el
+  director escribió este mensaje en nombre de un actor en un thread
+  `linked` (excepción — ver `/control` en Arquitectura de rutas). Nunca
+  se muestra en `/device`, solo en `/control`
 - `created_at` (timestamp)
 
 `src/shared/conversation.js` (`isOutgoing(conversation, message, myRoomId)`)
@@ -364,6 +379,16 @@ la lista de conversaciones).
   disimular el delay de navegar entre lista y chat (ver detalle arriba).
   Se descartó agregar además una transición `@view-transition` nativa:
   no confiable, dejaba el botón de volver sin responder
+- Reemplazo de acciones por dispositivo en `/control`/`/control/contacts`
+  por "Ver chat"/"Editar lista" con label+ícono (antes un solo 👁
+  ambiguo); en desktop nombre arriba y acciones abajo para que el
+  nombre no quede tapado en los 240px fijos de la sidebar
+- El director puede escribir excepcionalmente en una conversación
+  linkeada, en nombre del otro actor (`messages.injected_by_director`)
+  — ver detalle en `/control` (Arquitectura de rutas). Un solo selector
+  (el mismo "Hablando en nombre de" de siempre); se descartó un segundo
+  selector para elegir "en nombre de quién" porque solo tiene sentido
+  una opción (el otro actor, nunca el dueño de la lista activa)
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
   placeholder por diseño final, probar instalación real en Android, UI
   para borrar dispositivos (hoy requiere Table Editor de Supabase)
