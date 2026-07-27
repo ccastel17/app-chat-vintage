@@ -13,7 +13,7 @@ const linkModalEl = document.getElementById("link-modal");
 const linkCandidatesEl = document.getElementById("link-candidates");
 const closeLinkModalBtn = document.getElementById("close-link-modal-btn");
 
-const rooms = new Map(); // room_id -> { room_id, label }
+const rooms = new Map(); // room_id -> { room_id }
 let activeRoomId = null;
 const conversations = new Map(); // id -> conversation row del room activo
 let conversationsChannel = null;
@@ -29,7 +29,7 @@ function renderDeviceList() {
     return;
   }
   [...rooms.values()]
-    .sort((a, b) => a.label.localeCompare(b.label))
+    .sort((a, b) => a.room_id.localeCompare(b.room_id))
     .forEach((room) => {
       const li = document.createElement("li");
       li.className = room.room_id === activeRoomId ? "active" : "";
@@ -37,7 +37,7 @@ function renderDeviceList() {
         <span class="device-label"></span>
         <a class="view-chats-link" target="_blank" rel="noopener" title="Ver lista de chats de este actor">👁</a>
       `;
-      li.querySelector(".device-label").textContent = room.label;
+      li.querySelector(".device-label").textContent = room.room_id;
       li.querySelector(".view-chats-link").href = `/device/${room.room_id}`;
       li.querySelector(".view-chats-link").addEventListener("click", (e) => e.stopPropagation());
       li.addEventListener("click", () => selectRoom(room.room_id));
@@ -46,7 +46,7 @@ function renderDeviceList() {
 }
 
 async function loadRooms() {
-  const { data, error } = await supabase.from("rooms").select("*").order("label");
+  const { data, error } = await supabase.from("rooms").select("*").order("room_id");
   if (error) {
     console.error("Error cargando dispositivos:", error);
     return;
@@ -137,9 +137,7 @@ function renderLinkedCard(conversation) {
   const node = linkedCardTpl.content.cloneNode(true);
   const card = node.querySelector(".conversation-card");
   const deleteBtn = node.querySelector(".delete-conversation-btn");
-  const otherRoom = rooms.get(conversation.linked_room_id);
-  node.querySelector(".linked-with-text").textContent =
-    `Linkeado con: ${otherRoom?.label || conversation.linked_room_id}`;
+  node.querySelector(".linked-with-text").textContent = `Linkeado con: ${conversation.linked_room_id}`;
 
   wireEditableFields(node, conversation);
 
@@ -170,7 +168,7 @@ function renderConversationList() {
 
 async function selectRoom(roomId) {
   activeRoomId = roomId;
-  activeRoomLabel.textContent = rooms.get(roomId)?.label || roomId;
+  activeRoomLabel.textContent = roomId;
   addActionsEl.classList.remove("hidden");
   renderDeviceList();
 
@@ -214,7 +212,7 @@ linkActorBtn.addEventListener("click", () => {
   }
   candidates.forEach((room) => {
     const li = document.createElement("li");
-    li.textContent = room.label;
+    li.textContent = room.room_id;
     li.addEventListener("click", () => linkWith(room.room_id));
     linkCandidatesEl.appendChild(li);
   });
@@ -225,12 +223,10 @@ closeLinkModalBtn.addEventListener("click", () => linkModalEl.classList.add("hid
 
 async function linkWith(otherRoomId) {
   const threadId = crypto.randomUUID();
-  const myLabel = rooms.get(activeRoomId)?.label || activeRoomId;
-  const otherLabel = rooms.get(otherRoomId)?.label || otherRoomId;
 
   const { error } = await supabase.from("conversations").insert([
-    { room_id: activeRoomId, kind: "linked", contact_name: otherLabel, linked_room_id: otherRoomId, thread_id: threadId },
-    { room_id: otherRoomId, kind: "linked", contact_name: myLabel, linked_room_id: activeRoomId, thread_id: threadId },
+    { room_id: activeRoomId, kind: "linked", contact_name: otherRoomId, linked_room_id: otherRoomId, thread_id: threadId },
+    { room_id: otherRoomId, kind: "linked", contact_name: activeRoomId, linked_room_id: activeRoomId, thread_id: threadId },
   ]);
   if (error) {
     console.error("Error linkeando:", error);

@@ -89,6 +89,7 @@ button {
 #quick-actions button.active { background: #2f6fed; }
 
 #direction-btn { background: #1f242b; white-space: nowrap; }
+#direction-btn.hidden { display: none; }
 
 #devices li {
   padding: 8px 10px;
@@ -164,40 +165,6 @@ button {
 #new-device-form .form-actions button { flex: 1; padding: 8px; font-size: 13px; }
 #cancel-new-device-btn { background: #1f242b; }
 
-#room-settings {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: end;
-  padding: 12px;
-  background: #0b0f14;
-  border-radius: 8px;
-  border: 1px solid #1f242b;
-}
-
-#room-settings.hidden { display: none; }
-
-#room-settings label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 11px;
-  color: #7d8792;
-  flex: 1;
-  min-width: 140px;
-}
-
-#room-settings input {
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid #1f242b;
-  background: #1a1f26;
-  color: #e9edf1;
-  font-size: 13px;
-}
-
-#save-room-settings-btn { font-size: 13px; padding: 8px 14px; }
-
 /* ---------- acciones de arriba de la sidebar ---------- */
 .sidebar-top-actions {
   display: flex;
@@ -228,17 +195,28 @@ button {
 
 .contacts-link:hover { background: #263041; }
 
-/* ---------- selector de conversación dentro de un dispositivo ---------- */
+/* ---------- selector de conversación + toggle de dirección, agrupados ---------- */
+#speaker-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  background: #0b0f14;
+  border: 1px solid #1f242b;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+#speaker-control.hidden { display: none; }
+
 #conversation-select-wrap {
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 12px;
   color: #7d8792;
-  width: fit-content;
 }
-
-#conversation-select-wrap.hidden { display: none; }
 
 #conversation-select {
   padding: 8px 12px;
@@ -249,6 +227,7 @@ button {
   font-size: 14px;
   font-weight: 600;
 }
+
 
 #linked-hint {
   font-size: 12px;

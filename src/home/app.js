@@ -8,7 +8,7 @@ function initials(name) {
 }
 
 async function loadActors() {
-  const { data, error } = await supabase.from("rooms").select("*").order("label");
+  const { data, error } = await supabase.from("rooms").select("*").order("room_id");
   if (error) {
     console.error("Error cargando actores:", error);
     actorsGrid.innerHTML = '<p class="empty">No se pudo cargar la lista de actores.</p>';
@@ -31,8 +31,8 @@ async function loadActors() {
       <span class="actor-name"></span>
       <span class="actor-open">Abrir chats →</span>
     `;
-    a.querySelector(".actor-avatar").textContent = initials(room.label);
-    a.querySelector(".actor-name").textContent = room.label;
+    a.querySelector(".actor-avatar").textContent = initials(room.room_id);
+    a.querySelector(".actor-name").textContent = room.room_id;
     actorsGrid.appendChild(a);
   });
 }

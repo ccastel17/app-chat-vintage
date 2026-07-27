@@ -30,21 +30,18 @@
     <main id="control-panel">
       <h2 id="active-room-label">Selecciona un dispositivo</h2>
 
-      <div id="room-settings" class="hidden">
-        <label>Nombre interno (vos)<input id="edit-room-label" placeholder="Actor 1 - Ana" /></label>
-        <button id="save-room-settings-btn" type="button">Guardar</button>
+      <div id="speaker-control" class="hidden">
+        <label id="conversation-select-wrap">Hablando en nombre de
+          <select id="conversation-select"></select>
+        </label>
+        <button id="direction-btn" type="button"></button>
       </div>
-
-      <label id="conversation-select-wrap" class="hidden">Hablando en nombre de
-        <select id="conversation-select"></select>
-      </label>
 
       <p id="linked-hint" class="hidden">🔗 Conversación real entre dos actores — solo podés verla, no escribir acá.</p>
 
       <div id="room-messages"></div>
 
       <div id="composer">
-        <button id="direction-btn" type="button"></button>
         <input id="message-input" type="text" placeholder="Escribir mensaje..." />
         <button id="send-btn">Enviar</button>
       </div>
