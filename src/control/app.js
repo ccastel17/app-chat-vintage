@@ -23,6 +23,10 @@ const newDeviceForm = document.getElementById("new-device-form");
 const newRoomIdInput = document.getElementById("new-room-id");
 const cancelNewDeviceBtn = document.getElementById("cancel-new-device-btn");
 
+const roomSettingsEl = document.getElementById("room-settings");
+const editLabelInput = document.getElementById("edit-room-label");
+const saveRoomSettingsBtn = document.getElementById("save-room-settings-btn");
+
 const openSkinModalBtn = document.getElementById("open-skin-modal-btn");
 const closeSkinModalBtn = document.getElementById("close-skin-modal-btn");
 const skinModalEl = document.getElementById("skin-modal");
@@ -49,7 +53,7 @@ let direction = "incoming"; // "incoming" = mensaje del contacto | "outgoing" = 
 let activeThreadChannel = null;
 let typingActive = false;
 
-const rooms = new Map(); // room_id -> { room_id }
+const rooms = new Map(); // room_id -> { room_id, label }
 const onlineRoomIds = new Set();
 const conversations = new Map(); // id -> conversation row (solo las del room activo)
 
@@ -69,6 +73,10 @@ function renderMessage(conversation, { content, direction, sender_room_id, creat
   });
   roomMessagesEl.appendChild(msg);
   roomMessagesEl.scrollTop = roomMessagesEl.scrollHeight;
+}
+
+function fillRoomSettings(roomId) {
+  editLabelInput.value = rooms.get(roomId)?.label || roomId;
 }
 
 function updateDirectionBtn() {
@@ -173,7 +181,9 @@ let conversationsChannel = null;
 async function setActiveRoom(roomId) {
   activeRoomId = roomId;
   activeConversationId = null;
-  activeRoomLabel.textContent = roomId;
+  activeRoomLabel.textContent = rooms.get(roomId)?.label || roomId;
+  roomSettingsEl.classList.remove("hidden");
+  fillRoomSettings(roomId);
   renderDeviceList();
 
   await loadConversationsForRoom(roomId);
@@ -222,7 +232,7 @@ function renderDeviceList() {
         <span class="device-label"></span>
         <a class="view-chats-link" target="_blank" rel="noopener" title="Ver lista de chats de este actor">👁</a>
       `;
-      li.querySelector(".device-label").textContent = roomId;
+      li.querySelector(".device-label").textContent = rooms.get(roomId)?.label || roomId;
       li.querySelector(".view-chats-link").href = `/device/${roomId}`;
       li.querySelector(".view-chats-link").addEventListener("click", (e) => e.stopPropagation());
       li.addEventListener("click", () => setActiveRoom(roomId));
@@ -264,6 +274,10 @@ supabase
       rooms.set(payload.new.room_id, payload.new);
     }
     renderDeviceList();
+    if (payload.new?.room_id === activeRoomId) {
+      activeRoomLabel.textContent = payload.new.label;
+      fillRoomSettings(activeRoomId);
+    }
   })
   .subscribe();
 
@@ -289,6 +303,15 @@ newDeviceForm.addEventListener("submit", async (e) => {
   }
   newDeviceForm.classList.add("hidden");
   setActiveRoom(roomId);
+});
+
+saveRoomSettingsBtn.addEventListener("click", async () => {
+  if (!activeRoomId) return;
+  const { error } = await supabase.from("rooms").upsert({
+    room_id: activeRoomId,
+    label: editLabelInput.value.trim() || activeRoomId,
+  });
+  if (error) console.error("Error guardando nombre:", error);
 });
 
 directionBtn.addEventListener("click", () => {

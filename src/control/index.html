@@ -30,6 +30,12 @@
     <main id="control-panel">
       <h2 id="active-room-label">Selecciona un dispositivo</h2>
 
+      <div id="room-settings" class="hidden">
+        <label>Nombre del actor<input id="edit-room-label" placeholder="Ana" /></label>
+        <button id="save-room-settings-btn" type="button">Guardar</button>
+        <p class="field-hint">Solo lo ves vos en estos paneles — el actor nunca lo ve.</p>
+      </div>
+
       <div id="speaker-control" class="hidden">
         <label id="conversation-select-wrap">Hablando en nombre de
           <select id="conversation-select"></select>
