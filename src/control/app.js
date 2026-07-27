@@ -230,8 +230,11 @@ function renderDeviceList() {
       li.innerHTML = `
         <span class="online-dot"></span>
         <span class="device-label"></span>
+        <a class="view-chats-link" target="_blank" rel="noopener" title="Ver lista de chats de este actor">👁</a>
       `;
       li.querySelector(".device-label").textContent = room?.label || roomId;
+      li.querySelector(".view-chats-link").href = `/device/${roomId}`;
+      li.querySelector(".view-chats-link").addEventListener("click", (e) => e.stopPropagation());
       li.addEventListener("click", () => setActiveRoom(roomId));
       devicesEl.appendChild(li);
     });
