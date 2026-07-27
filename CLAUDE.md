@@ -40,14 +40,22 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
   genera salidas ProRes y WebM listas para compositing en post-producción
 
 ## Arquitectura de rutas
+- `/` → landing del proyecto (`src/home/`): copy de qué es, botón grande a
+  `/control`, grilla de accesos directos a `/device/[roomId]` por cada
+  actor ya creado (lee `rooms` en vivo), y un resumen de "cómo funciona".
+  Pensada para compartir con quien va a probar el producto
 - `/control` → mensajería en vivo del director
   - Lista de dispositivos (rooms + Presence para saber quién está online
-    ahora); botón "+ Nuevo dispositivo" para crear uno de antemano
+    ahora); botón "+ Nuevo dispositivo" para crear uno de antemano; ícono
+    👁 por dispositivo que abre su lista de chats (`/device/[roomId]`) en
+    una pestaña nueva
   - Panel para renombrar el dispositivo activo (`rooms.label`, nombre
     interno — el resto de la identidad del contacto vive en `conversations`,
     ver más abajo)
-  - Selector de conversación del dispositivo activo (pestañas 💬 simulada /
-    🔗 linkeada). Al elegir una:
+  - Selector de conversación del dispositivo activo (desplegable "Hablando
+    en nombre de", 💬 simulada / 🔗 linkeada — antes eran pestañas, se
+    cambió a desplegable porque no dejaba claro con qué contacto se estaba
+    hablando). Al elegir una:
     - **simulada**: hilo + composer + controles (toggle incoming/outgoing,
       simular "escribiendo...", marcar como "visto", simular llamada)
     - **linkeada**: hilo de solo lectura (mensajes reales entre dos
@@ -58,7 +66,8 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
 - `/control/contacts` → gestión de la lista de chats de cada dispositivo
   (separado de la mensajería en vivo a propósito, ver decisión de producto)
   - Por dispositivo: crear/editar/eliminar contactos simulados (nombre,
-    estado, foto de avatar) y crear/deshacer links reales con otro actor
+    estado, foto de avatar) y crear/deshacer links reales con otro actor;
+    ícono 👁 por dispositivo, igual que en `/control`
   - "🔗 + Linkear con otro actor" crea DOS conversaciones (una en la lista
     de cada dispositivo) que comparten `thread_id`
 - `/device/[roomId]` → **lista de chats** del actor (home, como WhatsApp)
@@ -243,6 +252,13 @@ la lista de conversaciones).
   end-to-end con Playwright: migración de datos previos, mensajería real
   bidireccional entre dos actores linkeados (incluido "escribiendo..."
   organico), y el modo lectura del director
+- Selector de conversación en `/control` cambiado de pestañas a
+  desplegable ("Hablando en nombre de") para no confundir con qué contacto
+  se está hablando; ícono 👁 por dispositivo en `/control` y
+  `/control/contacts` para abrir su lista de chats en una pestaña nueva
+- Landing en `/` (`src/home/`) para compartir con quien prueba el
+  producto: copy, CTA a `/control`, grilla de accesos a cada actor, y
+  "cómo funciona" resumido
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
   placeholder por diseño final, probar instalación real en Android, UI
   para borrar dispositivos (hoy requiere Table Editor de Supabase)
