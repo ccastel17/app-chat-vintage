@@ -49,8 +49,9 @@ teléfono al instante, sin reinstalar.
 
 1. Elegí el dispositivo en la lista de la izquierda (punto verde = está
    online)
-2. Elegí la conversación con las pestañas de arriba (💬 simulada / 🔗
-   linkeada)
+2. Elegí la conversación en el desplegable **"Hablando en nombre de"**
+   (💬 simulada / 🔗 linkeada) — así siempre sabés con qué contacto estás
+   hablando
 3. **Si es simulada**, tenés el control total:
    - Toggle arriba del cuadro de texto: 📥 **Mensaje del contacto**
      (aparece a la izquierda en el teléfono) / 📤 **Mensaje del actor**
