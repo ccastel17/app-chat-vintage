@@ -69,6 +69,26 @@ export function deriveSkinTokens(skin) {
   };
 }
 
+const SKIN_CACHE_KEY = "activeSkin";
+
+// Para pintar con el skin correcto desde el primer frame (antes de que
+// resuelva el fetch a Supabase) — usado por /device y /device/chat, que
+// muestran un skeleton mientras cargan.
+export function cacheSkin(skin) {
+  try {
+    localStorage.setItem(SKIN_CACHE_KEY, JSON.stringify(skin));
+  } catch {}
+}
+
+export function loadCachedSkin() {
+  try {
+    const raw = localStorage.getItem(SKIN_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function applySkinVars(target, skin) {
   const t = deriveSkinTokens(skin);
   target.style.setProperty("--skin-bg", t.bg);

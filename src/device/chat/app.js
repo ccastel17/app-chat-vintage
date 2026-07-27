@@ -1,8 +1,13 @@
 // Vista de un chat individual del dispositivo (actor)
 import { supabase, DEVICES_PRESENCE_CHANNEL } from "../../shared/supabaseClient.js";
-import { applySkinVars } from "../../shared/skin.js";
+import { applySkinVars, cacheSkin, loadCachedSkin } from "../../shared/skin.js";
 import { isOutgoing } from "../../shared/conversation.js";
 import { uploadChatImage } from "../../shared/uploadImage.js";
+
+// Pintar con el último skin conocido antes de esperar el fetch real —
+// para que el skeleton no arranque con los colores default del CSS
+const cachedSkin = loadCachedSkin();
+if (cachedSkin) applySkinVars(document.documentElement, cachedSkin);
 
 const backLink = document.getElementById("back-link");
 const messagesEl = document.getElementById("messages");
@@ -48,6 +53,7 @@ async function loadActiveSkin() {
   if (data?.skins) {
     activeSkinId = data.active_skin_id;
     applySkinVars(document.documentElement, data.skins);
+    cacheSkin(data.skins);
   }
 }
 
@@ -334,7 +340,10 @@ if (!roomId || !conversationId) {
     .channel("skin-changes")
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "app_settings" }, loadActiveSkin)
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "skins" }, (payload) => {
-      if (payload.new.id === activeSkinId) applySkinVars(document.documentElement, payload.new);
+      if (payload.new.id === activeSkinId) {
+        applySkinVars(document.documentElement, payload.new);
+        cacheSkin(payload.new);
+      }
     })
     .subscribe();
 

@@ -116,7 +116,12 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     mientras en paralelo se reconcilia con el fetch real — clave porque
     el actor entra y sale de los mismos chats varias veces por escena;
     (2) skeleton (placeholders grises con pulso) para la primera vez que
-    se abre un chat, cuando todavía no hay nada en caché. **Se intentó**
+    se abre un chat, cuando todavía no hay nada en caché — el color del
+    skeleton usa `--skin-line` (token del skin activo), y ese valor
+    también se cachea (`src/shared/skin.js` → `cacheSkin`/
+    `loadCachedSkin`, clave `activeSkin`) para que el skeleton pinte con
+    el skin correcto desde el primer frame en vez del color default
+    hardcodeado del CSS. **Se intentó**
     además una transición lateral con `@view-transition` nativo
     (cross-document) para disimular el delay restante, pero se descartó:
     incluso en el repro más mínimo posible (sin animaciones custom) el

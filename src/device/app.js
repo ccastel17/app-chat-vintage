@@ -1,8 +1,13 @@
 // Lista de chats del dispositivo (home)
 import { supabase, DEVICES_PRESENCE_CHANNEL } from "../shared/supabaseClient.js";
-import { applySkinVars } from "../shared/skin.js";
+import { applySkinVars, cacheSkin, loadCachedSkin } from "../shared/skin.js";
 
 const listEl = document.getElementById("chat-list");
+
+// Pintar con el último skin conocido antes de esperar el fetch real —
+// para que el skeleton no arranque con los colores default del CSS
+const cachedSkin = loadCachedSkin();
+if (cachedSkin) applySkinVars(document.documentElement, cachedSkin);
 
 function getRoomIdFromUrl() {
   const parts = window.location.pathname.split("/").filter(Boolean);
@@ -19,7 +24,10 @@ async function loadActiveSkin() {
     .select("active_skin_id, skins(*)")
     .eq("id", 1)
     .maybeSingle();
-  if (data?.skins) applySkinVars(document.documentElement, data.skins);
+  if (data?.skins) {
+    applySkinVars(document.documentElement, data.skins);
+    cacheSkin(data.skins);
+  }
 }
 
 const roomId = getRoomIdFromUrl();
