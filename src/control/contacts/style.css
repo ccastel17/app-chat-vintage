@@ -6,10 +6,33 @@ body {
   color: #e9edf1;
 }
 
+#top-bar {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: #0b0f14;
+  border-bottom: 1px solid #1f242b;
+}
+
+.top-bar-brand { font-size: 13px; font-weight: 700; color: #e9edf1; }
+
+.top-bar-home {
+  font-size: 12.5px;
+  color: #9aa4af;
+  text-decoration: none;
+  background: #1a1f26;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.top-bar-home:hover { background: #263041; color: #e9edf1; }
+
 #contacts-root {
   display: grid;
   grid-template-columns: 240px 1fr;
-  height: 100vh;
+  height: calc(100vh - 44px);
 }
 
 #device-list {
