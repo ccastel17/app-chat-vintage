@@ -1,63 +1,77 @@
--- Ejecutar en Supabase → SQL Editor
--- Tabla principal de mensajes simulados, ver modelo de datos en CLAUDE.md
+-- Ejecutar en Supabase → SQL Editor (proyecto nuevo, desde cero)
+-- Para un proyecto que ya tiene datos, correr los archivos de
+-- supabase/migrations/ en orden en vez de este archivo.
 
-create table if not exists messages (
-  id uuid primary key default gen_random_uuid(),
-  room_id text not null,
-  sender text not null,
-  content text not null,
-  status text not null default 'enviado' check (status in ('enviado', 'entregado', 'visto')),
-  direction text not null default 'incoming' check (direction in ('incoming', 'outgoing')),
-  created_at timestamptz not null default now()
-);
-
-create index if not exists messages_room_id_created_at_idx
-  on messages (room_id, created_at);
-
--- RLS: la app no tiene autenticación de usuarios (solo el equipo de rodaje
--- accede al panel de control y a los links de /device/[roomId]), así que se
--- habilita acceso público de lectura/escritura protegido por la key
--- publishable. El room_id actúa como código de acceso informal.
-alter table messages enable row level security;
-
-create policy "public read" on messages
-  for select using (true);
-
-create policy "public insert" on messages
-  for insert with check (true);
-
-create policy "public update" on messages
-  for update using (true);
-
--- Habilitar Realtime (postgres_changes) para esta tabla
-alter publication supabase_realtime add table messages;
-
--- Metadata de cada "dispositivo"/conversación: cómo se llama el contacto
--- simulado que ve el actor, y cómo lo identifica el director en /control.
--- No reemplaza Presence (que sigue indicando online/offline en vivo) —
--- rooms es solo el nombre, se puede crear antes o después de que el actor
--- abra el link.
+-- Identidad de cada dispositivo físico/teléfono (independiente de con
+-- quién "conversa" — eso vive en `conversations`). `label` es el nombre
+-- interno que usa el director en /control.
 create table if not exists rooms (
   room_id text primary key,
   label text not null,
-  contact_name text not null default 'Contacto',
-  contact_status text not null default 'en línea',
-  avatar_url text,
   created_at timestamptz not null default now()
 );
 
 alter table rooms enable row level security;
 
-create policy "public read" on rooms
-  for select using (true);
-
-create policy "public insert" on rooms
-  for insert with check (true);
-
-create policy "public update" on rooms
-  for update using (true);
+create policy "public read" on rooms for select using (true);
+create policy "public insert" on rooms for insert with check (true);
+create policy "public update" on rooms for update using (true);
 
 alter publication supabase_realtime add table rooms;
+
+-- Cada fila es una entrada en la lista de chats de un dispositivo:
+--   - 'simulated': contacto inventado, el director escribe ambos lados
+--   - 'linked': apunta a otro room real (linked_room_id). Los mensajes son
+--     reales entre los dos actores; el director solo puede ver, no escribir.
+-- Una conversación 'linked' existe como DOS filas (una por lado) que
+-- comparten thread_id — así ambos actores ven los mismos mensajes.
+create table if not exists conversations (
+  id uuid primary key default gen_random_uuid(),
+  room_id text not null references rooms(room_id) on delete cascade,
+  kind text not null default 'simulated' check (kind in ('simulated', 'linked')),
+  contact_name text not null default 'Contacto',
+  avatar_url text,
+  contact_status text not null default 'en línea',
+  linked_room_id text references rooms(room_id) on delete cascade,
+  thread_id uuid not null default gen_random_uuid(),
+  created_at timestamptz not null default now()
+);
+
+alter table conversations enable row level security;
+
+create policy "public read" on conversations for select using (true);
+create policy "public insert" on conversations for insert with check (true);
+create policy "public update" on conversations for update using (true);
+create policy "public delete" on conversations for delete using (true);
+
+alter publication supabase_realtime add table conversations;
+
+-- Mensajes: agrupados por thread_id (no por room), porque un thread
+-- 'linked' es compartido por dos rooms. `sender_room_id` identifica quién
+-- escribió de verdad — se usa en threads 'linked', donde entrante/saliente
+-- depende de quién lo mira (no puede ser un valor fijo). En threads
+-- 'simulated' se usa `direction`, que el director define explícitamente.
+create table if not exists messages (
+  id uuid primary key default gen_random_uuid(),
+  thread_id uuid not null,
+  sender_room_id text,
+  content text not null,
+  status text not null default 'enviado' check (status in ('enviado', 'entregado', 'visto')),
+  direction text check (direction in ('incoming', 'outgoing')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists messages_thread_id_created_at_idx
+  on messages (thread_id, created_at);
+
+alter table messages enable row level security;
+
+create policy "public read" on messages for select using (true);
+create policy "public insert" on messages for insert with check (true);
+create policy "public update" on messages for update using (true);
+create policy "public delete" on messages for delete using (true);
+
+alter publication supabase_realtime add table messages;
 
 -- Skins: paletas/tipografías reutilizables entre rodajes. Uno solo está
 -- "activo" a la vez (app_settings.active_skin_id) y aplica a todos los

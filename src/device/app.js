@@ -1,50 +1,16 @@
-// Vista del dispositivo (actor)
+// Lista de chats del dispositivo (home)
 import { supabase, DEVICES_PRESENCE_CHANNEL } from "../shared/supabaseClient.js";
 import { applySkinVars } from "../shared/skin.js";
 
-const messagesEl = document.getElementById("messages");
-const contactNameEl = document.getElementById("contact-name");
-const contactStatusEl = document.getElementById("contact-status");
-const contactAvatarEl = document.getElementById("contact-avatar");
-const callOverlayEl = document.getElementById("incoming-call-overlay");
-const callAvatarEl = document.getElementById("call-avatar");
-const callerNameEl = document.getElementById("caller-name");
-const callAcceptBtn = document.getElementById("call-accept-btn");
-const callDeclineBtn = document.getElementById("call-decline-btn");
-const messageInput = document.getElementById("device-message-input");
-const sendBtn = document.getElementById("device-send-btn");
+const listEl = document.getElementById("chat-list");
 
-let typingTimeout = null;
-let typingBubbleEl = null;
-let idleStatus = contactStatusEl.textContent;
-let activeSkinId = null;
-let currentAvatarUrl = null;
+function getRoomIdFromUrl() {
+  const parts = window.location.pathname.split("/").filter(Boolean);
+  return parts[1] || null;
+}
 
 function initials(name) {
   return (name || "?").trim().charAt(0).toUpperCase();
-}
-
-function setAvatar(el, name, avatarUrl) {
-  if (avatarUrl) {
-    el.style.backgroundImage = `url("${avatarUrl}")`;
-    el.textContent = "";
-  } else {
-    el.style.backgroundImage = "none";
-    el.textContent = initials(name);
-  }
-}
-
-contactAvatarEl.textContent = initials(contactNameEl.textContent);
-
-function applyRoomInfo(room) {
-  if (!room) return;
-  contactNameEl.textContent = room.contact_name;
-  currentAvatarUrl = room.avatar_url;
-  setAvatar(contactAvatarEl, room.contact_name, currentAvatarUrl);
-  idleStatus = room.contact_status;
-  if (!typingBubbleEl) {
-    contactStatusEl.textContent = idleStatus;
-  }
 }
 
 async function loadActiveSkin() {
@@ -53,149 +19,113 @@ async function loadActiveSkin() {
     .select("active_skin_id, skins(*)")
     .eq("id", 1)
     .maybeSingle();
-  if (data?.skins) {
-    activeSkinId = data.active_skin_id;
-    applySkinVars(document.documentElement, data.skins);
-  }
-}
-
-function getRoomIdFromUrl() {
-  const parts = window.location.pathname.split("/").filter(Boolean);
-  // /device/:roomId
-  return parts[1] || null;
-}
-
-function ticksFor(status) {
-  if (status === "visto") return '<span class="bubble-ticks seen">✓✓</span>';
-  if (status === "entregado") return '<span class="bubble-ticks">✓✓</span>';
-  return '<span class="bubble-ticks">✓</span>';
-}
-
-function renderMessage({ id, content, status, direction, created_at }) {
-  const isOutgoing = direction === "outgoing";
-  const bubble = document.createElement("div");
-  bubble.className = `bubble ${isOutgoing ? "outgoing" : "incoming"}`;
-  bubble.dataset.id = id;
-  bubble.innerHTML = `
-    <p class="bubble-text"></p>
-    <span class="bubble-meta">
-      <span class="bubble-time"></span>
-      ${isOutgoing ? ticksFor(status) : ""}
-    </span>
-  `;
-  bubble.querySelector(".bubble-text").textContent = content;
-  bubble.querySelector(".bubble-time").textContent = new Date(created_at).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  messagesEl.appendChild(bubble);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-}
-
-function updateMessageStatus(id, status) {
-  const bubble = messagesEl.querySelector(`[data-id="${id}"]`);
-  const ticksEl = bubble?.querySelector(".bubble-ticks");
-  if (!ticksEl) return;
-  ticksEl.outerHTML = ticksFor(status);
-}
-
-function showTyping(isTyping) {
-  clearTimeout(typingTimeout);
-  if (isTyping) {
-    contactStatusEl.textContent = "escribiendo...";
-    contactStatusEl.classList.add("typing");
-    if (!typingBubbleEl) {
-      typingBubbleEl = document.createElement("div");
-      typingBubbleEl.className = "bubble incoming typing";
-      typingBubbleEl.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
-      messagesEl.appendChild(typingBubbleEl);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
-    // Por si el panel de control no manda el evento de "parar" explícito
-    typingTimeout = setTimeout(() => showTyping(false), 6000);
-  } else {
-    contactStatusEl.textContent = idleStatus;
-    contactStatusEl.classList.remove("typing");
-    typingBubbleEl?.remove();
-    typingBubbleEl = null;
-  }
-}
-
-function showIncomingCall(callerName) {
-  if (!callOverlayEl) return;
-  const name = callerName || "Contacto";
-  callerNameEl.textContent = name;
-  setAvatar(callAvatarEl, name, currentAvatarUrl);
-  callOverlayEl.classList.remove("hidden");
-}
-
-function hideIncomingCall() {
-  callOverlayEl?.classList.add("hidden");
+  if (data?.skins) applySkinVars(document.documentElement, data.skins);
 }
 
 const roomId = getRoomIdFromUrl();
 
 if (!roomId) {
-  messagesEl.innerHTML = '<p style="padding:16px;color:#7d8792;">Falta el room_id en la URL (/device/roomId)</p>';
-  sendBtn.disabled = true;
-  messageInput.disabled = true;
+  listEl.innerHTML = '<li class="empty">Falta el room_id en la URL (/device/roomId)</li>';
 } else {
   loadActiveSkin();
 
-  // Nombre del contacto simulado, definido desde /control
-  supabase
-    .from("rooms")
-    .select("*")
-    .eq("room_id", roomId)
-    .maybeSingle()
-    .then(({ data }) => applyRoomInfo(data));
+  const conversations = new Map(); // id -> conversation row
+  const previews = new Map(); // id -> { content, created_at }
 
-  // Historial existente
-  supabase
-    .from("messages")
-    .select("*")
-    .eq("room_id", roomId)
-    .order("created_at", { ascending: true })
-    .then(({ data, error }) => {
-      if (error) {
-        console.error("Error cargando historial:", error);
-        return;
-      }
-      data.forEach(renderMessage);
+  function renderList() {
+    const items = [...conversations.values()].sort((a, b) => {
+      const ta = previews.get(a.id)?.created_at || a.created_at;
+      const tb = previews.get(b.id)?.created_at || b.created_at;
+      return new Date(tb) - new Date(ta);
     });
 
-  const roomChannel = supabase
-    .channel(`room:${roomId}`)
+    listEl.innerHTML = "";
+    if (items.length === 0) {
+      listEl.innerHTML = '<li class="empty">Todavía no tenés chats</li>';
+      return;
+    }
+
+    items.forEach((conversation) => {
+      const preview = previews.get(conversation.id);
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <a href="/device/${roomId}/chat/${conversation.id}">
+          <span class="chat-avatar"></span>
+          <span class="chat-info">
+            <span class="chat-name"></span>
+            <span class="chat-preview"></span>
+          </span>
+          <span class="chat-time"></span>
+        </a>
+      `;
+      const avatarEl = li.querySelector(".chat-avatar");
+      if (conversation.avatar_url) {
+        avatarEl.style.backgroundImage = `url("${conversation.avatar_url}")`;
+      } else {
+        avatarEl.textContent = initials(conversation.contact_name);
+      }
+      li.querySelector(".chat-name").textContent = conversation.contact_name;
+      li.querySelector(".chat-preview").textContent = preview ? preview.content : "Sin mensajes todavía";
+      if (preview) {
+        li.querySelector(".chat-time").textContent = new Date(preview.created_at).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+      listEl.appendChild(li);
+    });
+  }
+
+  async function loadPreview(conversation) {
+    const { data } = await supabase
+      .from("messages")
+      .select("content, created_at")
+      .eq("thread_id", conversation.thread_id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (data) previews.set(conversation.id, data);
+  }
+
+  async function loadConversations() {
+    const { data, error } = await supabase.from("conversations").select("*").eq("room_id", roomId);
+    if (error) {
+      console.error("Error cargando chats:", error);
+      return;
+    }
+    conversations.clear();
+    data.forEach((c) => conversations.set(c.id, c));
+    await Promise.all(data.map(loadPreview));
+    renderList();
+  }
+  loadConversations();
+
+  supabase
+    .channel(`conversations:${roomId}`)
     .on(
       "postgres_changes",
-      { event: "INSERT", schema: "public", table: "messages", filter: `room_id=eq.${roomId}` },
+      { event: "*", schema: "public", table: "conversations", filter: `room_id=eq.${roomId}` },
       (payload) => {
-        showTyping(false);
-        renderMessage(payload.new);
+        if (payload.eventType === "DELETE") {
+          conversations.delete(payload.old.id);
+        } else {
+          conversations.set(payload.new.id, payload.new);
+        }
+        renderList();
       }
     )
-    .on(
-      "postgres_changes",
-      { event: "UPDATE", schema: "public", table: "messages", filter: `room_id=eq.${roomId}` },
-      (payload) => updateMessageStatus(payload.new.id, payload.new.status)
-    )
-    .on(
-      "postgres_changes",
-      { event: "UPDATE", schema: "public", table: "rooms", filter: `room_id=eq.${roomId}` },
-      (payload) => applyRoomInfo(payload.new)
-    )
-    .on("broadcast", { event: "typing" }, ({ payload }) => showTyping(payload.isTyping))
-    .on("broadcast", { event: "incoming_call" }, ({ payload }) => showIncomingCall(payload.callerName))
-    .on("broadcast", { event: "end_call" }, () => hideIncomingCall())
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+      const conversation = [...conversations.values()].find((c) => c.thread_id === payload.new.thread_id);
+      if (!conversation) return;
+      previews.set(conversation.id, { content: payload.new.content, created_at: payload.new.created_at });
+      renderList();
+    })
     .subscribe();
 
-  // Skin activo (colores/fuente): global, no depende del room
+  // Skin activo: global, no depende del room
   supabase
     .channel("skin-changes")
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "app_settings" }, loadActiveSkin)
-    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "skins" }, (payload) => {
-      if (payload.new.id === activeSkinId) applySkinVars(document.documentElement, payload.new);
-    })
     .subscribe();
 
   // Presencia: anunciarse como dispositivo activo para que /control lo liste
@@ -206,29 +136,5 @@ if (!roomId) {
     if (status === "SUBSCRIBED") {
       presenceChannel.track({ room_id: roomId, online_at: new Date().toISOString() });
     }
-  });
-
-  callDeclineBtn.addEventListener("click", hideIncomingCall);
-  callAcceptBtn.addEventListener("click", () => {
-    callerNameEl.textContent = "Conectando...";
-    setTimeout(hideIncomingCall, 1500);
-  });
-
-  async function sendMessage() {
-    const content = messageInput.value.trim();
-    if (!content) return;
-    messageInput.value = "";
-    const { error } = await supabase.from("messages").insert({
-      room_id: roomId,
-      sender: "actor",
-      content,
-      direction: "outgoing",
-    });
-    if (error) console.error("Error enviando mensaje:", error);
-  }
-
-  sendBtn.addEventListener("click", sendMessage);
-  messageInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") sendMessage();
   });
 }

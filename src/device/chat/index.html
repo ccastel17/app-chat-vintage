@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>Chat</title>
+
+  <!-- PWA: manifest dinámico por room_id, para que "Instalar app" arme un
+       ícono que abre directo a la lista de chats (ver api/manifest.js) -->
+  <script>
+    (function () {
+      var roomId = location.pathname.split("/").filter(Boolean)[1] || "";
+      document.write('<link rel="manifest" href="/api/manifest?room=' + encodeURIComponent(roomId) + '">');
+    })();
+  </script>
+  <meta name="theme-color" content="#0b0f14" />
+
+  <!-- iOS: Safari no respeta bien el manifest, hay que declarar esto aparte -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Chat" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+  <link rel="stylesheet" href="/device/chat/style.css" />
+</head>
+<body>
+  <div id="chat-root">
+    <!-- Header simulando contacto -->
+    <header id="chat-header">
+      <a id="back-link" href="#" aria-label="Volver">‹</a>
+      <span id="contact-avatar"></span>
+      <span id="contact-info">
+        <span id="contact-name">Contacto</span>
+        <span id="contact-status">en línea</span>
+      </span>
+    </header>
+
+    <!-- Área de mensajes -->
+    <main id="messages"></main>
+
+    <!-- Overlay de llamada entrante -->
+    <div id="incoming-call-overlay" class="hidden">
+      <span id="call-avatar"></span>
+      <span id="caller-name">Contacto</span>
+      <span class="call-kind">Llamada de audio</span>
+      <div class="call-actions">
+        <button id="call-decline-btn" type="button" aria-label="Rechazar">✕</button>
+        <button id="call-accept-btn" type="button" aria-label="Contestar">📞</button>
+      </div>
+    </div>
+
+    <!-- Composer: el actor escribe y envía sus propios mensajes -->
+    <footer id="device-composer">
+      <input id="device-message-input" type="text" placeholder="Mensaje" autocomplete="off" />
+      <button id="device-send-btn" type="button" aria-label="Enviar">➤</button>
+    </footer>
+  </div>
+
+  <script src="/device/chat/app.js" type="module"></script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js");
+    }
+  </script>
+</body>
+</html>

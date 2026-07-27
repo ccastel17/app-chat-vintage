@@ -6,7 +6,7 @@
   <title>Chat</title>
 
   <!-- PWA: manifest dinámico por room_id, para que "Instalar app" arme un
-       ícono que abre directo a esta conversación (ver api/manifest.js) -->
+       ícono que abre directo a la lista de chats (ver api/manifest.js) -->
   <script>
     (function () {
       var roomId = location.pathname.split("/").filter(Boolean)[1] || "";
@@ -24,35 +24,12 @@
   <link rel="stylesheet" href="/device/style.css" />
 </head>
 <body>
-  <div id="chat-root">
-    <!-- Header simulando contacto -->
-    <header id="chat-header">
-      <span id="contact-avatar"></span>
-      <span id="contact-info">
-        <span id="contact-name">Contacto</span>
-        <span id="contact-status">en línea</span>
-      </span>
+  <div id="list-root">
+    <header id="list-header">
+      <h1>Chats</h1>
     </header>
 
-    <!-- Área de mensajes -->
-    <main id="messages"></main>
-
-    <!-- Overlay de llamada entrante -->
-    <div id="incoming-call-overlay" class="hidden">
-      <span id="call-avatar"></span>
-      <span id="caller-name">Contacto</span>
-      <span class="call-kind">Llamada de audio</span>
-      <div class="call-actions">
-        <button id="call-decline-btn" type="button" aria-label="Rechazar">✕</button>
-        <button id="call-accept-btn" type="button" aria-label="Contestar">📞</button>
-      </div>
-    </div>
-
-    <!-- Composer: el actor escribe y envía sus propios mensajes -->
-    <footer id="device-composer">
-      <input id="device-message-input" type="text" placeholder="Mensaje" autocomplete="off" />
-      <button id="device-send-btn" type="button" aria-label="Enviar">➤</button>
-    </footer>
+    <ul id="chat-list"></ul>
   </div>
 
   <script src="/device/app.js" type="module"></script>

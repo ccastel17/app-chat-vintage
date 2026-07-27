@@ -1,10 +1,15 @@
 // Panel de control (director)
 import { supabase, DEVICES_PRESENCE_CHANNEL } from "../shared/supabaseClient.js";
 import { applySkinVars } from "../shared/skin.js";
+import { isOutgoing } from "../shared/conversation.js";
 
 const devicesEl = document.getElementById("devices");
 const activeRoomLabel = document.getElementById("active-room-label");
+const conversationTabsEl = document.getElementById("conversation-tabs");
+const linkedHintEl = document.getElementById("linked-hint");
 const roomMessagesEl = document.getElementById("room-messages");
+const composerEl = document.getElementById("composer");
+const quickActionsEl = document.getElementById("quick-actions");
 const messageInput = document.getElementById("message-input");
 const sendBtn = document.getElementById("send-btn");
 const directionBtn = document.getElementById("direction-btn");
@@ -19,11 +24,7 @@ const cancelNewDeviceBtn = document.getElementById("cancel-new-device-btn");
 
 const roomSettingsEl = document.getElementById("room-settings");
 const editLabelInput = document.getElementById("edit-room-label");
-const editContactNameInput = document.getElementById("edit-contact-name");
-const editContactStatusInput = document.getElementById("edit-contact-status");
 const saveRoomSettingsBtn = document.getElementById("save-room-settings-btn");
-const editAvatarPreview = document.getElementById("edit-avatar-preview");
-const editAvatarFile = document.getElementById("edit-avatar-file");
 
 const openSkinModalBtn = document.getElementById("open-skin-modal-btn");
 const closeSkinModalBtn = document.getElementById("close-skin-modal-btn");
@@ -46,21 +47,23 @@ const deleteSkinBtn = document.getElementById("delete-skin-btn");
 const skinPreviewPhone = document.getElementById("skin-preview-phone");
 
 let activeRoomId = null;
+let activeConversationId = null;
 let direction = "incoming"; // "incoming" = mensaje del contacto | "outgoing" = mensaje del actor
-let activeRoomChannel = null;
+let activeThreadChannel = null;
 let typingActive = false;
 
-const rooms = new Map(); // room_id -> { room_id, label, contact_name, contact_status }
+const rooms = new Map(); // room_id -> { room_id, label }
 const onlineRoomIds = new Set();
+const conversations = new Map(); // id -> conversation row (solo las del room activo)
 
-function updateDirectionBtn() {
-  directionBtn.textContent =
-    direction === "incoming" ? "📥 Mensaje del contacto" : "📤 Mensaje del actor";
+function activeConversation() {
+  return conversations.get(activeConversationId) || null;
 }
 
-function renderMessage({ content, direction, created_at }) {
+function renderMessage(conversation, { content, direction, sender_room_id, created_at }) {
+  const outgoing = isOutgoing(conversation, { direction, sender_room_id }, conversation.room_id);
   const msg = document.createElement("div");
-  msg.className = `msg ${direction === "outgoing" ? "outgoing" : "incoming"}`;
+  msg.className = `msg ${outgoing ? "outgoing" : "incoming"}`;
   msg.innerHTML = `<span class="msg-text"></span><span class="msg-meta"></span>`;
   msg.querySelector(".msg-text").textContent = content;
   msg.querySelector(".msg-meta").textContent = new Date(created_at).toLocaleTimeString([], {
@@ -72,65 +75,68 @@ function renderMessage({ content, direction, created_at }) {
 }
 
 function fillRoomSettings(roomId) {
-  const room = rooms.get(roomId);
-  editLabelInput.value = room?.label || roomId;
-  editContactNameInput.value = room?.contact_name || "Contacto";
-  editContactStatusInput.value = room?.contact_status || "en línea";
-  if (room?.avatar_url) {
-    editAvatarPreview.style.backgroundImage = `url("${room.avatar_url}")`;
-    editAvatarPreview.textContent = "";
-  } else {
-    editAvatarPreview.style.backgroundImage = "none";
-    editAvatarPreview.textContent = (room?.contact_name || "?").trim().charAt(0).toUpperCase();
-  }
+  editLabelInput.value = rooms.get(roomId)?.label || roomId;
 }
 
-editAvatarFile.addEventListener("change", async () => {
-  const file = editAvatarFile.files[0];
-  if (!file || !activeRoomId) return;
-  const ext = file.name.split(".").pop();
-  const path = `${activeRoomId}-${Date.now()}.${ext}`;
+function updateDirectionBtn() {
+  directionBtn.textContent =
+    direction === "incoming" ? "📥 Mensaje del contacto" : "📤 Mensaje del actor";
+}
 
-  const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-  if (uploadError) {
-    console.error("Error subiendo avatar:", uploadError);
+function applyConversationModeUI(conversation) {
+  const isLinked = conversation?.kind === "linked";
+  composerEl.classList.toggle("hidden", !conversation || isLinked);
+  linkedHintEl.classList.toggle("hidden", !isLinked);
+  typingBtn.disabled = !conversation || isLinked;
+  seenBtn.disabled = !conversation || isLinked;
+  callBtn.disabled = !conversation;
+}
+
+function renderConversationTabs() {
+  conversationTabsEl.innerHTML = "";
+  const items = [...conversations.values()];
+  if (items.length === 0) {
+    conversationTabsEl.classList.add("hidden");
     return;
   }
-  const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-
-  // Se incluyen los otros campos (con sus fallbacks ya cargados en el form)
-  // porque si la room todavía no existía en la tabla, el upsert hace un
-  // INSERT real y label/contact_name/contact_status son NOT NULL.
-  const { error } = await supabase.from("rooms").upsert({
-    room_id: activeRoomId,
-    label: editLabelInput.value.trim() || activeRoomId,
-    contact_name: editContactNameInput.value.trim() || "Contacto",
-    contact_status: editContactStatusInput.value.trim() || "en línea",
-    avatar_url: publicUrl,
+  conversationTabsEl.classList.remove("hidden");
+  items.forEach((conversation) => {
+    const li = document.createElement("li");
+    li.className = conversation.id === activeConversationId ? "active" : "";
+    li.innerHTML = `<span class="kind-icon">${conversation.kind === "linked" ? "🔗" : "💬"}</span><span></span>`;
+    li.querySelector("span:last-child").textContent = conversation.contact_name;
+    li.addEventListener("click", () => setActiveConversation(conversation.id));
+    conversationTabsEl.appendChild(li);
   });
-  if (error) console.error("Error guardando avatar:", error);
-  editAvatarFile.value = "";
-});
+}
 
-async function setActiveRoom(roomId) {
-  activeRoomId = roomId;
-  activeRoomLabel.textContent = rooms.get(roomId)?.label || roomId;
-  roomSettingsEl.classList.remove("hidden");
-  fillRoomSettings(roomId);
-  renderDeviceList();
+async function setActiveConversation(conversationId) {
+  activeConversationId = conversationId;
+  renderConversationTabs();
+  const conversation = activeConversation();
+  applyConversationModeUI(conversation);
+
+  activeThreadChannel?.unsubscribe();
+  roomMessagesEl.innerHTML = "";
+
+  if (!conversation) {
+    roomMessagesEl.innerHTML =
+      '<span class="empty">Este dispositivo no tiene conversaciones — andá a <a href="/control/contacts">Contactos</a> para agregar una.</span>';
+    return;
+  }
 
   roomMessagesEl.innerHTML = '<span class="empty">Cargando…</span>';
+  const threadId = conversation.thread_id;
 
-  activeRoomChannel?.unsubscribe();
-  activeRoomChannel = supabase
-    .channel(`room:${roomId}`)
+  activeThreadChannel = supabase
+    .channel(`thread:${threadId}`)
     .on(
       "postgres_changes",
-      { event: "INSERT", schema: "public", table: "messages", filter: `room_id=eq.${roomId}` },
+      { event: "INSERT", schema: "public", table: "messages", filter: `thread_id=eq.${threadId}` },
       (payload) => {
-        if (roomId !== activeRoomId) return;
+        if (conversationId !== activeConversationId) return;
         roomMessagesEl.querySelector(".empty")?.remove();
-        renderMessage(payload.new);
+        renderMessage(conversation, payload.new);
       }
     )
     .subscribe();
@@ -138,10 +144,10 @@ async function setActiveRoom(roomId) {
   const { data, error } = await supabase
     .from("messages")
     .select("*")
-    .eq("room_id", roomId)
+    .eq("thread_id", threadId)
     .order("created_at", { ascending: true });
 
-  if (roomId !== activeRoomId) return; // el director cambió de room mientras cargaba
+  if (conversationId !== activeConversationId) return;
   roomMessagesEl.innerHTML = "";
   if (error) {
     console.error("Error cargando historial:", error);
@@ -151,7 +157,53 @@ async function setActiveRoom(roomId) {
     roomMessagesEl.innerHTML = '<span class="empty">Sin mensajes todavía</span>';
     return;
   }
-  data.forEach(renderMessage);
+  data.forEach((m) => renderMessage(conversation, m));
+}
+
+async function loadConversationsForRoom(roomId) {
+  const { data, error } = await supabase.from("conversations").select("*").eq("room_id", roomId);
+  conversations.clear();
+  if (error) {
+    console.error("Error cargando conversaciones:", error);
+  } else {
+    data.forEach((c) => conversations.set(c.id, c));
+  }
+  renderConversationTabs();
+  const first = [...conversations.keys()][0] || null;
+  await setActiveConversation(first);
+}
+
+let conversationsChannel = null;
+
+async function setActiveRoom(roomId) {
+  activeRoomId = roomId;
+  activeConversationId = null;
+  activeRoomLabel.textContent = rooms.get(roomId)?.label || roomId;
+  roomSettingsEl.classList.remove("hidden");
+  fillRoomSettings(roomId);
+  renderDeviceList();
+
+  await loadConversationsForRoom(roomId);
+
+  conversationsChannel?.unsubscribe();
+  conversationsChannel = supabase
+    .channel(`conversations-of:${roomId}`)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "conversations", filter: `room_id=eq.${roomId}` },
+      (payload) => {
+        if (payload.eventType === "DELETE") {
+          conversations.delete(payload.old.id);
+        } else {
+          conversations.set(payload.new.id, payload.new);
+        }
+        renderConversationTabs();
+        if (!activeConversationId) {
+          setActiveConversation([...conversations.keys()][0] || null);
+        }
+      }
+    )
+    .subscribe();
 }
 
 function renderDeviceList() {
@@ -175,13 +227,9 @@ function renderDeviceList() {
       ].join(" ").trim();
       li.innerHTML = `
         <span class="online-dot"></span>
-        <span>
-          <span class="device-label"></span><br>
-          <span class="device-sub"></span>
-        </span>
+        <span class="device-label"></span>
       `;
       li.querySelector(".device-label").textContent = room?.label || roomId;
-      li.querySelector(".device-sub").textContent = room ? room.contact_name : "sin nombrar";
       li.addEventListener("click", () => setActiveRoom(roomId));
       devicesEl.appendChild(li);
     });
@@ -243,12 +291,7 @@ newDeviceForm.addEventListener("submit", async (e) => {
   const roomId = newRoomIdInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
   if (!roomId) return;
 
-  const { error } = await supabase.from("rooms").upsert({
-    room_id: roomId,
-    label: roomId,
-    contact_name: "Contacto",
-    contact_status: "en línea",
-  });
+  const { error } = await supabase.from("rooms").upsert({ room_id: roomId, label: roomId });
   if (error) {
     console.error("Error creando dispositivo:", error);
     return;
@@ -262,8 +305,6 @@ saveRoomSettingsBtn.addEventListener("click", async () => {
   const { error } = await supabase.from("rooms").upsert({
     room_id: activeRoomId,
     label: editLabelInput.value.trim() || activeRoomId,
-    contact_name: editContactNameInput.value.trim() || "Contacto",
-    contact_status: editContactStatusInput.value.trim() || "en línea",
   });
   if (error) console.error("Error guardando nombre:", error);
 });
@@ -276,11 +317,11 @@ updateDirectionBtn();
 
 sendBtn.addEventListener("click", async () => {
   const content = messageInput.value.trim();
-  if (!activeRoomId || !content) return;
+  const conversation = activeConversation();
+  if (!conversation || conversation.kind === "linked" || !content) return;
 
   const { error } = await supabase.from("messages").insert({
-    room_id: activeRoomId,
-    sender: direction === "incoming" ? "contacto" : "actor",
+    thread_id: conversation.thread_id,
     content,
     direction,
   });
@@ -293,10 +334,10 @@ sendBtn.addEventListener("click", async () => {
 });
 
 function setTypingBroadcast(isTyping) {
-  if (!activeRoomId) return;
+  if (!activeConversation() || activeConversation().kind === "linked") return;
   typingActive = isTyping;
   typingBtn.classList.toggle("active", isTyping);
-  activeRoomChannel?.send({
+  activeThreadChannel?.send({
     type: "broadcast",
     event: "typing",
     payload: { isTyping },
@@ -306,21 +347,23 @@ function setTypingBroadcast(isTyping) {
 typingBtn.addEventListener("click", () => setTypingBroadcast(!typingActive));
 
 seenBtn.addEventListener("click", async () => {
-  if (!activeRoomId) return;
+  const conversation = activeConversation();
+  if (!conversation || conversation.kind === "linked") return;
   const { error } = await supabase
     .from("messages")
     .update({ status: "visto" })
-    .eq("room_id", activeRoomId)
+    .eq("thread_id", conversation.thread_id)
     .eq("direction", "outgoing");
   if (error) console.error("Error marcando como visto:", error);
 });
 
 callBtn.addEventListener("click", () => {
-  if (!activeRoomId) return;
-  activeRoomChannel?.send({
+  const conversation = activeConversation();
+  if (!conversation) return;
+  activeThreadChannel?.send({
     type: "broadcast",
     event: "incoming_call",
-    payload: { callerName: rooms.get(activeRoomId)?.contact_name || activeRoomLabel.textContent },
+    payload: { callerName: conversation.contact_name },
   });
 });
 

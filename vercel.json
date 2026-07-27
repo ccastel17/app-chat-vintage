@@ -6,9 +6,17 @@
 
     { "source": "/shared/:path*", "destination": "/src/shared/:path*" },
 
+    { "source": "/control/contacts/style.css", "destination": "/src/control/contacts/style.css" },
+    { "source": "/control/contacts/app.js", "destination": "/src/control/contacts/app.js" },
+    { "source": "/control/contacts", "destination": "/src/control/contacts/index.html" },
+
     { "source": "/control/style.css", "destination": "/src/control/style.css" },
     { "source": "/control/app.js", "destination": "/src/control/app.js" },
     { "source": "/control", "destination": "/src/control/index.html" },
+
+    { "source": "/device/chat/style.css", "destination": "/src/device/chat/style.css" },
+    { "source": "/device/chat/app.js", "destination": "/src/device/chat/app.js" },
+    { "source": "/device/:roomId/chat/:conversationId", "destination": "/src/device/chat/index.html" },
 
     { "source": "/device/style.css", "destination": "/src/device/style.css" },
     { "source": "/device/app.js", "destination": "/src/device/app.js" },

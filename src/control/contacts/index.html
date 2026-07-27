@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contactos — Chat Rodaje</title>
+  <link rel="stylesheet" href="/control/contacts/style.css" />
+</head>
+<body>
+  <div id="contacts-root">
+    <aside id="device-list">
+      <a href="/control" class="back-link">‹ Volver a mensajería</a>
+
+      <h2>Dispositivos</h2>
+      <ul id="devices"></ul>
+    </aside>
+
+    <main id="contacts-panel">
+      <h2 id="active-room-label">Selecciona un dispositivo</h2>
+
+      <div id="conversation-list"></div>
+
+      <div id="add-actions" class="hidden">
+        <button id="add-simulated-btn" type="button">💬 + Contacto simulado</button>
+        <button id="link-actor-btn" type="button">🔗 + Linkear con otro actor</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- Template de una conversación simulada editable -->
+  <template id="conversation-card-template">
+    <div class="conversation-card">
+      <span class="card-avatar avatar-preview"></span>
+      <div class="card-fields">
+        <label class="avatar-upload-label">Foto
+          <input type="file" accept="image/*" class="avatar-file-input" />
+        </label>
+        <label>Nombre del contacto<input type="text" class="contact-name-input" /></label>
+        <label>Estado<input type="text" class="contact-status-input" /></label>
+        <button type="button" class="save-conversation-btn">Guardar</button>
+        <button type="button" class="delete-conversation-btn danger-btn">Eliminar</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- Template de una conversación linkeada (solo lectura + desvincular) -->
+  <template id="linked-card-template">
+    <div class="conversation-card linked">
+      <span class="card-avatar">🔗</span>
+      <div class="card-fields">
+        <p class="linked-with-text"></p>
+        <button type="button" class="delete-conversation-btn danger-btn">Desvincular</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- Modal para elegir con qué actor linkear -->
+  <div id="link-modal" class="hidden">
+    <div id="link-modal-content">
+      <h2>Linkear con otro actor</h2>
+      <p class="hint">Los mensajes entre estos dos dispositivos van a ser reales, en vivo, sin pasar por vos.</p>
+      <ul id="link-candidates"></ul>
+      <button id="close-link-modal-btn" type="button">Cancelar</button>
+    </div>
+  </div>
+
+  <script src="/control/contacts/app.js" type="module"></script>
+</body>
+</html>
