@@ -49,18 +49,21 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     ahora); botón "+ Nuevo dispositivo" para crear uno de antemano; ícono
     👁 por dispositivo que abre su lista de chats (`/device/[roomId]`) en
     una pestaña nueva
-  - Panel para renombrar el dispositivo activo (`rooms.label`, nombre
-    interno — el resto de la identidad del contacto vive en `conversations`,
-    ver más abajo)
+  - La lista de dispositivos muestra directamente el `room_id` (el código
+    que se elige al crear el dispositivo) — no hay "nombre interno" ni
+    ninguna otra edición a nivel dispositivo; toda la identidad de contacto
+    vive en `conversations`, ver más abajo
   - Selector de conversación del dispositivo activo (desplegable "Hablando
     en nombre de", 💬 simulada / 🔗 linkeada — antes eran pestañas, se
     cambió a desplegable porque no dejaba claro con qué contacto se estaba
-    hablando). Al elegir una:
+    hablando), agrupado visualmente junto al toggle incoming/outgoing en
+    `#speaker-control` (antes el toggle quedaba suelto al lado del
+    composer, sin relación visual clara con el selector). Al elegir una:
     - **simulada**: hilo + composer + controles (toggle incoming/outgoing,
       simular "escribiendo...", marcar como "visto", simular llamada)
     - **linkeada**: hilo de solo lectura (mensajes reales entre dos
-      actores) — composer y controles de simular deshabilitados/ocultos,
-      excepto "Simular llamada entrante" que sigue disponible
+      actores) — composer, toggle y controles de simular
+      deshabilitados/ocultos, excepto "Simular llamada entrante"
   - Modal "Apariencia" (🎨): editor de skins con preview en vivo tipo
     mini-teléfono
 - `/control/contacts` → gestión de la lista de chats de cada dispositivo
@@ -70,8 +73,8 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     ícono 👁 por dispositivo, igual que en `/control`
   - En una conversación linkeada, nombre/foto/estado también son editables
     — son la identidad que ve ESE actor del otro, independiente por lado
-    (renombrar del lado de A no toca lo que ve B) y del nombre interno del
-    otro dispositivo (que solo se usa como valor inicial al crear el link)
+    (renombrar del lado de A no toca lo que ve B) y del `room_id` del otro
+    dispositivo (que solo se usa como valor inicial al crear el link)
   - "🔗 + Linkear con otro actor" crea DOS conversaciones (una en la lista
     de cada dispositivo) que comparten `thread_id`
 - `/device/[roomId]` → **lista de chats** del actor (home, como WhatsApp)
@@ -92,8 +95,12 @@ incrementales ya aplicados — no volver a correr `schema.sql` entero contra
 una base existente, `create policy` no soporta `if not exists`).
 
 Tabla `rooms` (identidad del dispositivo físico, no del contacto):
-- `room_id` (text, pk) — el segmento de la URL `/device/[roomId]`
-- `label` (text) — nombre interno, solo lo ve el director
+- `room_id` (text, pk) — el segmento de la URL `/device/[roomId]`, y lo
+  que se muestra en toda la UI del director para identificar el
+  dispositivo (no hay "nombre interno" aparte, se sacó por confuso)
+- `label` (text, NOT NULL) — legacy, ya no se lee ni edita desde ningún
+  panel; se sigue insertando igual a `room_id` al crear un dispositivo
+  solo para satisfacer la constraint, sin significado propio
 - `created_at` (timestamp)
 
 Tabla `conversations` (una fila = una entrada en la lista de chats de un
@@ -240,10 +247,10 @@ la lista de conversaciones).
   entrada, checks de estado (✓/✓✓/✓✓ visto), burbuja de "escribiendo..."
   con puntitos animados, pantalla de llamada entrante con avatar
   pulsante y botones aceptar/rechazar
-- Panel de control completo (fase 3): tabla `rooms` para nombrar
-  dispositivos (nombre interno + nombre de contacto + estado), crear
-  dispositivos de antemano desde `/control`, renombrado en vivo reflejado
-  en `/device` sin recargar
+- Panel de control completo (fase 3): tabla `rooms`, crear dispositivos
+  de antemano desde `/control` (esta fase originalmente incluía nombrar
+  el contacto en `rooms` directamente; se reemplazó por `conversations`
+  al agregar la lista de chats, ver más abajo)
 - Apariencia customizable (skins): tabla `skins` + `app_settings` (un
   skin activo global), editor con preview en vivo en `/control`, 3 skins
   base para reutilizar entre rodajes, avatar de contacto vía Storage
