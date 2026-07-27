@@ -340,6 +340,12 @@ la lista de conversaciones).
   `linked`, de solo lectura). Un mensaje puede tener foto sin texto,
   texto sin foto, o ambos. Probado end-to-end con Playwright en los tres
   sentidos: director→actor, actor→director, y actor↔actor real
+  - En `/device/chat`, la miniatura tiene `max-height` (antes no, y una
+    foto alta se veía enorme dentro de la burbuja) y al tocarla abre un
+    visor fullscreen (`#image-viewer`, tap para cerrar). El badge de
+    hora superpuesto en burbujas solo-foto tiene `pointer-events: none`
+    para que el click siempre llegue a la imagen y no al badge, incluso
+    si la foto es muy chica
 - Borrado de mensajes desde `/control` (individual y "Vaciar chat" por
   thread), propagado en vivo a `/device/chat`; y `/control` +
   `/control/contacts` responsive para poder operarse desde celular o

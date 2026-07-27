@@ -14,6 +14,8 @@ const messagesEl = document.getElementById("messages");
 const contactNameEl = document.getElementById("contact-name");
 const contactStatusEl = document.getElementById("contact-status");
 const contactAvatarEl = document.getElementById("contact-avatar");
+const imageViewerEl = document.getElementById("image-viewer");
+const imageViewerImg = document.getElementById("image-viewer-img");
 const callOverlayEl = document.getElementById("incoming-call-overlay");
 const callAvatarEl = document.getElementById("call-avatar");
 const callerNameEl = document.getElementById("caller-name");
@@ -134,6 +136,14 @@ function showIncomingCall(callerName) {
 function hideIncomingCall() {
   callOverlayEl?.classList.add("hidden");
 }
+
+messagesEl.addEventListener("click", (e) => {
+  const img = e.target.closest(".bubble-image");
+  if (!img) return;
+  imageViewerImg.src = img.src;
+  imageViewerEl.classList.remove("hidden");
+});
+imageViewerEl.addEventListener("click", () => imageViewerEl.classList.add("hidden"));
 
 const { roomId, conversationId } = getIdsFromUrl();
 backLink.href = roomId ? `/device/${roomId}` : "/";
