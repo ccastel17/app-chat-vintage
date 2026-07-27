@@ -43,12 +43,21 @@
     </div>
   </template>
 
-  <!-- Template de una conversación linkeada (solo lectura + desvincular) -->
+  <!-- Template de una conversación linkeada: nombre/foto que ve ESTE actor
+       son editables (independientes del nombre interno del otro
+       dispositivo); los mensajes en sí quedan fuera del alcance del
+       director -->
   <template id="linked-card-template">
     <div class="conversation-card linked">
-      <span class="card-avatar">🔗</span>
+      <span class="card-avatar avatar-preview"></span>
       <div class="card-fields">
         <p class="linked-with-text"></p>
+        <label class="avatar-upload-label">Foto
+          <input type="file" accept="image/*" class="avatar-file-input" />
+        </label>
+        <label>Nombre que ve el actor<input type="text" class="contact-name-input" /></label>
+        <label>Estado<input type="text" class="contact-status-input" /></label>
+        <button type="button" class="save-conversation-btn">Guardar</button>
         <button type="button" class="delete-conversation-btn danger-btn">Desvincular</button>
       </div>
     </div>

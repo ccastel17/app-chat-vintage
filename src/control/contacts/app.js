@@ -56,15 +56,15 @@ async function loadRooms() {
   renderDeviceList();
 }
 
-function renderSimulatedCard(conversation) {
-  const node = conversationCardTpl.content.cloneNode(true);
-  const card = node.querySelector(".conversation-card");
+// Cablea avatar/nombre/estado editables — comunes a tarjetas simuladas y
+// linkeadas (en una linkeada esto es solo la identidad que ve ESTE actor,
+// independiente del nombre interno del otro dispositivo).
+function wireEditableFields(node, conversation) {
   const avatarEl = node.querySelector(".card-avatar");
   const fileInput = node.querySelector(".avatar-file-input");
   const nameInput = node.querySelector(".contact-name-input");
   const statusInput = node.querySelector(".contact-status-input");
   const saveBtn = node.querySelector(".save-conversation-btn");
-  const deleteBtn = node.querySelector(".delete-conversation-btn");
 
   function paintAvatar() {
     if (conversation.avatar_url) {
@@ -112,6 +112,14 @@ function renderSimulatedCard(conversation) {
     conversation.contact_status = contact_status;
     paintAvatar();
   });
+}
+
+function renderSimulatedCard(conversation) {
+  const node = conversationCardTpl.content.cloneNode(true);
+  const card = node.querySelector(".conversation-card");
+  const deleteBtn = node.querySelector(".delete-conversation-btn");
+
+  wireEditableFields(node, conversation);
 
   deleteBtn.addEventListener("click", async () => {
     if (!confirm(`¿Eliminar el contacto "${conversation.contact_name}"? Se borran también sus mensajes.`)) return;
@@ -132,6 +140,8 @@ function renderLinkedCard(conversation) {
   const otherRoom = rooms.get(conversation.linked_room_id);
   node.querySelector(".linked-with-text").textContent =
     `Linkeado con: ${otherRoom?.label || conversation.linked_room_id}`;
+
+  wireEditableFields(node, conversation);
 
   deleteBtn.addEventListener("click", async () => {
     if (!confirm("¿Desvincular esta conversación? Los mensajes se borran para los dos actores.")) return;

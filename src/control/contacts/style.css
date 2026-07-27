@@ -107,11 +107,6 @@ button {
   flex-shrink: 0;
 }
 
-.conversation-card.linked .card-avatar {
-  background: #1f242b;
-  font-size: 20px;
-}
-
 .card-fields {
   flex: 1;
   display: flex;
@@ -146,7 +141,7 @@ button {
 
 .danger-btn { background: #3a1f1f; color: #ff9b96; }
 
-.linked-with-text { font-size: 14px; flex: 1; }
+.linked-with-text { font-size: 13px; color: #7d8792; flex-basis: 100%; margin-bottom: 2px; }
 
 /* ---------- modal de link ---------- */
 #link-modal {
