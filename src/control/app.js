@@ -2,6 +2,7 @@
 import { supabase, DEVICES_PRESENCE_CHANNEL } from "../shared/supabaseClient.js";
 import { applySkinVars } from "../shared/skin.js";
 import { isOutgoing } from "../shared/conversation.js";
+import { uploadChatImage } from "../shared/uploadImage.js";
 
 const devicesEl = document.getElementById("devices");
 const activeRoomLabel = document.getElementById("active-room-label");
@@ -13,6 +14,8 @@ const composerEl = document.getElementById("composer");
 const quickActionsEl = document.getElementById("quick-actions");
 const messageInput = document.getElementById("message-input");
 const sendBtn = document.getElementById("send-btn");
+const imageInput = document.getElementById("image-input");
+const attachBtn = document.getElementById("attach-btn");
 const directionBtn = document.getElementById("direction-btn");
 const typingBtn = document.getElementById("typing-btn");
 const seenBtn = document.getElementById("seen-btn");
@@ -63,12 +66,17 @@ function activeConversation() {
   return conversations.get(activeConversationId) || null;
 }
 
-function renderMessage(conversation, { content, direction, sender_room_id, created_at }) {
+function renderMessage(conversation, { content, image_url, direction, sender_room_id, created_at }) {
   const outgoing = isOutgoing(conversation, { direction, sender_room_id }, conversation.room_id);
   const msg = document.createElement("div");
   msg.className = `msg ${outgoing ? "outgoing" : "incoming"}`;
-  msg.innerHTML = `<span class="msg-text"></span><span class="msg-meta"></span>`;
-  msg.querySelector(".msg-text").textContent = content;
+  msg.innerHTML = `
+    ${image_url ? '<img class="msg-image" alt="Foto" />' : ""}
+    ${content ? '<span class="msg-text"></span>' : ""}
+    <span class="msg-meta"></span>
+  `;
+  if (image_url) msg.querySelector(".msg-image").src = image_url;
+  if (content) msg.querySelector(".msg-text").textContent = content;
   msg.querySelector(".msg-meta").textContent = new Date(created_at).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
@@ -372,6 +380,28 @@ sendBtn.addEventListener("click", async () => {
   }
   messageInput.value = "";
   setTypingBroadcast(false);
+});
+
+imageInput.addEventListener("change", async () => {
+  const file = imageInput.files[0];
+  imageInput.value = "";
+  const conversation = activeConversation();
+  if (!file || !conversation || conversation.kind === "linked") return;
+
+  let imageUrl;
+  try {
+    imageUrl = await uploadChatImage(supabase, conversation.thread_id, file);
+  } catch (error) {
+    console.error("Error subiendo foto:", error);
+    return;
+  }
+  const { error } = await supabase.from("messages").insert({
+    thread_id: conversation.thread_id,
+    content: "",
+    image_url: imageUrl,
+    direction,
+  });
+  if (error) console.error("Error enviando foto:", error);
 });
 
 function setTypingBroadcast(isTyping) {

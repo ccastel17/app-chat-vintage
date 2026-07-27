@@ -144,6 +144,25 @@ html, body {
 .bubble-ticks { letter-spacing: -1px; color: var(--skin-tick); }
 .bubble-ticks.seen { color: var(--skin-tick-seen); }
 
+.bubble-image {
+  display: block;
+  max-width: 100%;
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.bubble.image-only { padding: 4px; }
+.bubble.image-only .bubble-image { margin-bottom: 0; }
+.bubble.image-only .bubble-meta {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 1px 6px;
+  border-radius: 8px;
+  color: #fff;
+}
+
 .bubble.typing {
   display: flex;
   align-items: center;
@@ -255,3 +274,18 @@ html, body {
 }
 
 #device-send-btn:disabled { background: var(--skin-line); color: var(--skin-muted); }
+
+#device-attach-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  color: var(--skin-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+#device-attach-btn:hover { background: var(--skin-bubble-incoming-bg); }

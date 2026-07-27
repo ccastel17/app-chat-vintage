@@ -139,7 +139,11 @@ Tabla `messages` (agrupados por `thread_id`, no por dispositivo):
   en threads `linked`: ahí "entrante/saliente" depende de quién lo mira
   (el mismo mensaje es saliente para quien lo escribió, entrante para el
   otro actor) y por eso no puede ser un valor fijo
-- `content` (text)
+- `content` (text) — puede ir vacío (`''`) si el mensaje es solo una foto
+- `image_url` (text, nullable) — foto adjunta al mensaje, subida a Storage
+  (bucket público `chat-images`, separado de `avatars` porque son
+  adjuntos de un mensaje puntual, no fotos de perfil). Un mensaje puede
+  tener texto, foto, o ambos
 - `status` (text) — enviado | entregado | visto
 - `direction` (text, nullable) — incoming | outgoing. Solo se usa en
   threads `simulated`, donde el director lo define explícitamente
@@ -287,6 +291,19 @@ la lista de conversaciones).
   arriba de todo en `/control`, con aclaración de que es solo para el
   director. Usado con fallback a `room_id` en `/control`,
   `/control/contacts` y la landing
+- Barra superior ("🎬 Chat Vintage" + botón a la home) en `/control` y
+  `/control/contacts`, para volver a la landing sin escribir la URL a
+  mano — a propósito no está en `/device`, tiene que verse indistinguible
+  de una app de mensajería real
+- Fotos en los chats (`messages.image_url`, bucket Storage `chat-images`,
+  helper compartido `src/shared/uploadImage.js`): botón de adjuntar en
+  ambos composers. En `/device/chat` el actor sube su propia foto (real
+  en threads `linked`, o queda `direction: outgoing` en `simulated`,
+  igual que el texto); en `/control` el director sube una foto "en
+  nombre de" el contacto simulado (deshabilitado en conversaciones
+  `linked`, de solo lectura). Un mensaje puede tener foto sin texto,
+  texto sin foto, o ambos. Probado end-to-end con Playwright en los tres
+  sentidos: director→actor, actor→director, y actor↔actor real
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
   placeholder por diseño final, probar instalación real en Android, UI
   para borrar dispositivos (hoy requiere Table Editor de Supabase)

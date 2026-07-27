@@ -51,6 +51,8 @@
 
     <!-- Composer: el actor escribe y envía sus propios mensajes -->
     <footer id="device-composer">
+      <label id="device-attach-btn" for="device-image-input" aria-label="Adjuntar foto">📎</label>
+      <input id="device-image-input" type="file" accept="image/*" hidden />
       <input id="device-message-input" type="text" placeholder="Mensaje" autocomplete="off" />
       <button id="device-send-btn" type="button" aria-label="Enviar">➤</button>
     </footer>

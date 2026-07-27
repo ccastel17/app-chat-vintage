@@ -58,6 +58,7 @@ create table if not exists messages (
   thread_id uuid not null,
   sender_room_id text,
   content text not null,
+  image_url text,
   status text not null default 'enviado' check (status in ('enviado', 'entregado', 'visto')),
   direction text check (direction in ('incoming', 'outgoing')),
   created_at timestamptz not null default now()
@@ -141,3 +142,17 @@ create policy "public upload avatars" on storage.objects
 
 create policy "public update avatars" on storage.objects
   for update using (bucket_id = 'avatars');
+
+-- Storage bucket público para fotos enviadas dentro de un chat
+insert into storage.buckets (id, name, public)
+values ('chat-images', 'chat-images', true)
+on conflict (id) do nothing;
+
+create policy "public read chat-images" on storage.objects
+  for select using (bucket_id = 'chat-images');
+
+create policy "public upload chat-images" on storage.objects
+  for insert with check (bucket_id = 'chat-images');
+
+create policy "public update chat-images" on storage.objects
+  for update using (bucket_id = 'chat-images');

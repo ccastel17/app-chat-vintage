@@ -2,6 +2,7 @@
 import { supabase, DEVICES_PRESENCE_CHANNEL } from "../../shared/supabaseClient.js";
 import { applySkinVars } from "../../shared/skin.js";
 import { isOutgoing } from "../../shared/conversation.js";
+import { uploadChatImage } from "../../shared/uploadImage.js";
 
 const backLink = document.getElementById("back-link");
 const messagesEl = document.getElementById("messages");
@@ -15,6 +16,7 @@ const callAcceptBtn = document.getElementById("call-accept-btn");
 const callDeclineBtn = document.getElementById("call-decline-btn");
 const messageInput = document.getElementById("device-message-input");
 const sendBtn = document.getElementById("device-send-btn");
+const imageInput = document.getElementById("device-image-input");
 
 let typingTimeout = null;
 let typingBubbleEl = null;
@@ -63,17 +65,21 @@ function ticksFor(status) {
 
 function renderMessage(conversation, myRoomId, message) {
   const outgoing = isOutgoing(conversation, message, myRoomId);
+  const hasImage = Boolean(message.image_url);
+  const hasText = Boolean(message.content);
   const bubble = document.createElement("div");
-  bubble.className = `bubble ${outgoing ? "outgoing" : "incoming"}`;
+  bubble.className = `bubble ${outgoing ? "outgoing" : "incoming"} ${hasImage && !hasText ? "image-only" : ""}`.trim();
   bubble.dataset.id = message.id;
   bubble.innerHTML = `
-    <p class="bubble-text"></p>
+    ${hasImage ? '<img class="bubble-image" alt="Foto" />' : ""}
+    ${hasText ? '<p class="bubble-text"></p>' : ""}
     <span class="bubble-meta">
       <span class="bubble-time"></span>
       ${outgoing ? ticksFor(message.status) : ""}
     </span>
   `;
-  bubble.querySelector(".bubble-text").textContent = message.content;
+  if (hasImage) bubble.querySelector(".bubble-image").src = message.image_url;
+  if (hasText) bubble.querySelector(".bubble-text").textContent = message.content;
   bubble.querySelector(".bubble-time").textContent = new Date(message.created_at).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
@@ -229,6 +235,24 @@ if (!roomId || !conversationId) {
       if (error) console.error("Error enviando mensaje:", error);
     }
 
+    async function sendImage(file) {
+      let imageUrl;
+      try {
+        imageUrl = await uploadChatImage(supabase, threadId, file);
+      } catch (error) {
+        console.error("Error subiendo foto:", error);
+        return;
+      }
+      const { error } = await supabase.from("messages").insert({
+        thread_id: threadId,
+        sender_room_id: roomId,
+        content: "",
+        image_url: imageUrl,
+        direction: conversation.kind === "simulated" ? "outgoing" : null,
+      });
+      if (error) console.error("Error enviando foto:", error);
+    }
+
     sendBtn.addEventListener("click", sendMessage);
     messageInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") sendMessage();
@@ -237,6 +261,11 @@ if (!roomId || !conversationId) {
       broadcastMyTyping(true);
       clearTimeout(myTypingTimeout);
       myTypingTimeout = setTimeout(() => broadcastMyTyping(false), 2000);
+    });
+    imageInput.addEventListener("change", () => {
+      const file = imageInput.files[0];
+      imageInput.value = "";
+      if (file) sendImage(file);
     });
   }
 
