@@ -8,6 +8,7 @@
 create table if not exists rooms (
   room_id text primary key,
   label text not null,
+  avatar_url text,
   created_at timestamptz not null default now()
 );
 

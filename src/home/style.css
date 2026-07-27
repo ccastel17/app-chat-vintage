@@ -121,7 +121,7 @@ h1 {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent) center / cover no-repeat;
   color: white;
   font-weight: 700;
   font-size: 19px;

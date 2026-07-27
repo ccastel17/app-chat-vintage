@@ -24,6 +24,8 @@ const newRoomIdInput = document.getElementById("new-room-id");
 const cancelNewDeviceBtn = document.getElementById("cancel-new-device-btn");
 
 const roomSettingsEl = document.getElementById("room-settings");
+const editRoomAvatarEl = document.getElementById("edit-room-avatar");
+const editRoomAvatarFile = document.getElementById("edit-room-avatar-file");
 const editLabelInput = document.getElementById("edit-room-label");
 const saveRoomSettingsBtn = document.getElementById("save-room-settings-btn");
 
@@ -75,9 +77,43 @@ function renderMessage(conversation, { content, direction, sender_room_id, creat
   roomMessagesEl.scrollTop = roomMessagesEl.scrollHeight;
 }
 
-function fillRoomSettings(roomId) {
-  editLabelInput.value = rooms.get(roomId)?.label || roomId;
+function initials(name) {
+  return (name || "?").trim().charAt(0).toUpperCase();
 }
+
+function fillRoomSettings(roomId) {
+  const room = rooms.get(roomId);
+  editLabelInput.value = room?.label || roomId;
+  if (room?.avatar_url) {
+    editRoomAvatarEl.style.backgroundImage = `url("${room.avatar_url}")`;
+    editRoomAvatarEl.textContent = "";
+  } else {
+    editRoomAvatarEl.style.backgroundImage = "none";
+    editRoomAvatarEl.textContent = initials(room?.label || roomId);
+  }
+}
+
+editRoomAvatarFile.addEventListener("change", async () => {
+  const file = editRoomAvatarFile.files[0];
+  if (!file || !activeRoomId) return;
+  const ext = file.name.split(".").pop();
+  const path = `room-${activeRoomId}-${Date.now()}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+  if (uploadError) {
+    console.error("Error subiendo avatar:", uploadError);
+    return;
+  }
+  const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+
+  const { error } = await supabase.from("rooms").upsert({
+    room_id: activeRoomId,
+    label: editLabelInput.value.trim() || activeRoomId,
+    avatar_url: publicUrl,
+  });
+  if (error) console.error("Error guardando avatar:", error);
+  editRoomAvatarFile.value = "";
+});
 
 function updateDirectionBtn() {
   directionBtn.textContent =

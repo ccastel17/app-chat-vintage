@@ -225,12 +225,28 @@ closeLinkModalBtn.addEventListener("click", () => linkModalEl.classList.add("hid
 
 async function linkWith(otherRoomId) {
   const threadId = crypto.randomUUID();
-  const myLabel = rooms.get(activeRoomId)?.label || activeRoomId;
-  const otherLabel = rooms.get(otherRoomId)?.label || otherRoomId;
+  const me = rooms.get(activeRoomId);
+  const other = rooms.get(otherRoomId);
+  const myLabel = me?.label || activeRoomId;
+  const otherLabel = other?.label || otherRoomId;
 
   const { error } = await supabase.from("conversations").insert([
-    { room_id: activeRoomId, kind: "linked", contact_name: otherLabel, linked_room_id: otherRoomId, thread_id: threadId },
-    { room_id: otherRoomId, kind: "linked", contact_name: myLabel, linked_room_id: activeRoomId, thread_id: threadId },
+    {
+      room_id: activeRoomId,
+      kind: "linked",
+      contact_name: otherLabel,
+      avatar_url: other?.avatar_url || null,
+      linked_room_id: otherRoomId,
+      thread_id: threadId,
+    },
+    {
+      room_id: otherRoomId,
+      kind: "linked",
+      contact_name: myLabel,
+      avatar_url: me?.avatar_url || null,
+      linked_room_id: activeRoomId,
+      thread_id: threadId,
+    },
   ]);
   if (error) {
     console.error("Error linkeando:", error);

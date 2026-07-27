@@ -31,9 +31,13 @@
       <h2 id="active-room-label">Selecciona un dispositivo</h2>
 
       <div id="room-settings" class="hidden">
+        <span id="edit-room-avatar" class="avatar-preview"></span>
+        <label class="avatar-upload-label">Foto del actor
+          <input id="edit-room-avatar-file" type="file" accept="image/*" />
+        </label>
         <label>Nombre del actor<input id="edit-room-label" placeholder="Ana" /></label>
         <button id="save-room-settings-btn" type="button">Guardar</button>
-        <p class="field-hint">Solo lo ves vos en estos paneles — el actor nunca lo ve.</p>
+        <p class="field-hint">Solo lo ves vos en estos paneles — el actor nunca lo ve. Se usa como foto por default al linkear con otro actor.</p>
       </div>
 
       <div id="speaker-control" class="hidden">

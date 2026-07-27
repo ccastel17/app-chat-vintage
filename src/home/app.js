@@ -56,7 +56,12 @@ async function loadActors() {
         <a class="open-link" target="_blank" rel="noopener">Abrir →</a>
       </div>
     `;
-    card.querySelector(".actor-avatar").textContent = initials(name);
+    const avatarEl = card.querySelector(".actor-avatar");
+    if (room.avatar_url) {
+      avatarEl.style.backgroundImage = `url("${room.avatar_url}")`;
+    } else {
+      avatarEl.textContent = initials(name);
+    }
     card.querySelector(".actor-name").textContent = name;
     card.querySelector(".actor-url").textContent = `/device/${room.room_id}`;
     card.querySelector(".open-link").href = url;

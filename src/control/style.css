@@ -186,7 +186,7 @@ button {
   color: #7d8792;
 }
 
-#room-settings input {
+#room-settings > label input:not([type="file"]) {
   padding: 8px 10px;
   border-radius: 6px;
   border: 1px solid #1f242b;
@@ -197,6 +197,22 @@ button {
 }
 
 #save-room-settings-btn { font-size: 13px; padding: 8px 14px; }
+
+.avatar-preview {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #2f6fed center / cover no-repeat;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.avatar-upload-label { max-width: 150px; }
+.avatar-upload-label input { font-size: 12px; min-width: 0 !important; }
 
 .field-hint {
   flex-basis: 100%;
