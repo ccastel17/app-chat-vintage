@@ -68,6 +68,10 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
   - Por dispositivo: crear/editar/eliminar contactos simulados (nombre,
     estado, foto de avatar) y crear/deshacer links reales con otro actor;
     ícono 👁 por dispositivo, igual que en `/control`
+  - En una conversación linkeada, nombre/foto/estado también son editables
+    — son la identidad que ve ESE actor del otro, independiente por lado
+    (renombrar del lado de A no toca lo que ve B) y del nombre interno del
+    otro dispositivo (que solo se usa como valor inicial al crear el link)
   - "🔗 + Linkear con otro actor" crea DOS conversaciones (una en la lista
     de cada dispositivo) que comparten `thread_id`
 - `/device/[roomId]` → **lista de chats** del actor (home, como WhatsApp)
