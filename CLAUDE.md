@@ -107,6 +107,23 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     en threads simulados queda como `direction: outgoing`, igual que
     cuando el director simula una respuesta del actor
   - Debe verse indistinguible de una app de mensajería real
+  - `/device/[roomId]` y `/device/[roomId]/chat/[conversationId]` son
+    documentos HTML separados (no una SPA) — cada navegación entre
+    lista↔chat recarga todo desde cero y reabre los canales Realtime, lo
+    que genera un delay perceptible. Paliado con: (1) caché en
+    `localStorage` (`chatlist:<roomId>` y `chat:<conversationId>`) que
+    pinta instantáneo el último estado conocido apenas carga la página,
+    mientras en paralelo se reconcilia con el fetch real — clave porque
+    el actor entra y sale de los mismos chats varias veces por escena;
+    (2) skeleton (placeholders grises con pulso) para la primera vez que
+    se abre un chat, cuando todavía no hay nada en caché. **Se intentó**
+    además una transición lateral con `@view-transition` nativo
+    (cross-document) para disimular el delay restante, pero se descartó:
+    incluso en el repro más mínimo posible (sin animaciones custom) el
+    navegador tira "Transition was skipped" y deja de responder al click
+    de volver — no se pudo verificar que fuera confiable, y un botón
+    "volver" que se cuelga en pleno rodaje es peor que el delay
+    original. No reintentar sin resolver antes ese problema
 
 ## Modelo de datos (Supabase)
 Ver `supabase/schema.sql` (schema completo) y `supabase/migrations/` (cambios
@@ -322,6 +339,10 @@ la lista de conversaciones).
   thread), propagado en vivo a `/device/chat`; y `/control` +
   `/control/contacts` responsive para poder operarse desde celular o
   tablet, no solo notebook
+- Caché en `localStorage` + skeleton en `/device` y `/device/chat` para
+  disimular el delay de navegar entre lista y chat (ver detalle arriba).
+  Se descartó agregar además una transición `@view-transition` nativa:
+  no confiable, dejaba el botón de volver sin responder
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
   placeholder por diseño final, probar instalación real en Android, UI
   para borrar dispositivos (hoy requiere Table Editor de Supabase)

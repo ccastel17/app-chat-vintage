@@ -139,6 +139,51 @@ if (!roomId || !conversationId) {
 } else {
   loadActiveSkin();
 
+  // Caché en localStorage: pinta instantáneo con el último estado conocido
+  // (nombre/foto/estado del contacto + últimos mensajes) mientras se espera
+  // la respuesta real de Supabase — evita la pantalla en blanco al entrar
+  // a un chat ya visitado antes.
+  const CACHE_KEY = `chat:${conversationId}`;
+  let cachedMessages = [];
+
+  function loadCachedChat() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveCachedChat(conversation) {
+    try {
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({
+          conversation: {
+            kind: conversation.kind,
+            contact_name: conversation.contact_name,
+            avatar_url: conversation.avatar_url,
+            contact_status: conversation.contact_status,
+          },
+          messages: cachedMessages.slice(-30),
+        })
+      );
+    } catch {}
+  }
+
+  const cached = loadCachedChat();
+  if (cached) {
+    contactNameEl.textContent = cached.conversation.contact_name;
+    currentAvatarUrl = cached.conversation.avatar_url;
+    setAvatar(contactAvatarEl, cached.conversation.contact_name, currentAvatarUrl);
+    idleStatus = cached.conversation.contact_status;
+    contactStatusEl.textContent = idleStatus;
+    messagesEl.innerHTML = "";
+    cachedMessages = cached.messages;
+    cachedMessages.forEach((m) => renderMessage({ kind: cached.conversation.kind }, roomId, m));
+  }
+
   supabase
     .from("conversations")
     .select("*")
@@ -177,7 +222,10 @@ if (!roomId || !conversationId) {
           console.error("Error cargando historial:", error);
           return;
         }
+        messagesEl.innerHTML = "";
         data.forEach((m) => renderMessage(conversation, roomId, m));
+        cachedMessages = data;
+        saveCachedChat(conversation);
       });
 
     const threadChannel = supabase
@@ -188,6 +236,8 @@ if (!roomId || !conversationId) {
         (payload) => {
           showTyping(false);
           renderMessage(conversation, roomId, payload.new);
+          cachedMessages.push(payload.new);
+          saveCachedChat(conversation);
         }
       )
       .on(
@@ -200,6 +250,8 @@ if (!roomId || !conversationId) {
         { event: "DELETE", schema: "public", table: "messages", filter: `thread_id=eq.${threadId}` },
         (payload) => {
           messagesEl.querySelector(`[data-id="${payload.old.id}"]`)?.remove();
+          cachedMessages = cachedMessages.filter((m) => m.id !== payload.old.id);
+          saveCachedChat(conversation);
         }
       )
       .on(
@@ -208,6 +260,7 @@ if (!roomId || !conversationId) {
         (payload) => {
           Object.assign(conversation, payload.new);
           applyContactInfo(conversation);
+          saveCachedChat(conversation);
         }
       )
       .on("broadcast", { event: "typing" }, ({ payload }) => showTyping(payload.isTyping))

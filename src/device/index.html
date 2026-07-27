@@ -29,7 +29,12 @@
       <h1>Chats</h1>
     </header>
 
-    <ul id="chat-list"></ul>
+    <ul id="chat-list">
+      <!-- Placeholder mientras carga la primera vez (sin caché todavía) -->
+      <li class="skeleton-row" aria-hidden="true"><span class="skeleton-avatar"></span><span class="skeleton-lines"><span class="skeleton-line w60"></span><span class="skeleton-line w40"></span></span></li>
+      <li class="skeleton-row" aria-hidden="true"><span class="skeleton-avatar"></span><span class="skeleton-lines"><span class="skeleton-line w40"></span><span class="skeleton-line w60"></span></span></li>
+      <li class="skeleton-row" aria-hidden="true"><span class="skeleton-avatar"></span><span class="skeleton-lines"><span class="skeleton-line w60"></span><span class="skeleton-line w40"></span></span></li>
+    </ul>
   </div>
 
   <script src="/device/app.js" type="module"></script>

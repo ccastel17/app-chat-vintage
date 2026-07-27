@@ -32,6 +32,32 @@ if (!roomId) {
   const conversations = new Map(); // id -> conversation row
   const previews = new Map(); // id -> { content, created_at }
 
+  // Caché en localStorage: pinta instantáneo con el último estado conocido
+  // mientras se espera la respuesta real de Supabase (evita la pantalla en
+  // blanco al ir y volver entre la lista y un chat).
+  const CACHE_KEY = `chatlist:${roomId}`;
+
+  function loadCache() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveCache() {
+    try {
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({
+          conversations: [...conversations.values()],
+          previews: Object.fromEntries(previews),
+        })
+      );
+    } catch {}
+  }
+
   function renderList() {
     const items = [...conversations.values()].sort((a, b) => {
       const ta = previews.get(a.id)?.created_at || a.created_at;
@@ -94,8 +120,17 @@ if (!roomId) {
       return;
     }
     conversations.clear();
+    previews.clear();
     data.forEach((c) => conversations.set(c.id, c));
     await Promise.all(data.map(loadPreview));
+    renderList();
+    saveCache();
+  }
+
+  const cached = loadCache();
+  if (cached) {
+    cached.conversations.forEach((c) => conversations.set(c.id, c));
+    Object.entries(cached.previews).forEach(([id, p]) => previews.set(id, p));
     renderList();
   }
   loadConversations();
@@ -112,6 +147,7 @@ if (!roomId) {
           conversations.set(payload.new.id, payload.new);
         }
         renderList();
+        saveCache();
       }
     )
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
@@ -119,6 +155,7 @@ if (!roomId) {
       if (!conversation) return;
       previews.set(conversation.id, { content: payload.new.content, created_at: payload.new.created_at });
       renderList();
+      saveCache();
     })
     .subscribe();
 

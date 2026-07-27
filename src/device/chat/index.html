@@ -36,7 +36,12 @@
     </header>
 
     <!-- Área de mensajes -->
-    <main id="messages"></main>
+    <main id="messages">
+      <!-- Placeholder mientras carga la primera vez (sin caché todavía) -->
+      <div class="skeleton-bubble incoming" aria-hidden="true"></div>
+      <div class="skeleton-bubble outgoing" aria-hidden="true"></div>
+      <div class="skeleton-bubble incoming short" aria-hidden="true"></div>
+    </main>
 
     <!-- Overlay de llamada entrante -->
     <div id="incoming-call-overlay" class="hidden">

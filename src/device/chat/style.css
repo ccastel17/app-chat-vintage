@@ -289,3 +289,25 @@ html, body {
 }
 
 #device-attach-btn:hover { background: var(--skin-bubble-incoming-bg); }
+
+/* ---------- skeleton: placeholder mientras no hay caché ni datos ---------- */
+.skeleton-bubble {
+  width: 55%;
+  height: 34px;
+  border-radius: 16px;
+  background: var(--skin-line);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-bubble.incoming { align-self: flex-start; }
+.skeleton-bubble.outgoing { align-self: flex-end; width: 40%; }
+.skeleton-bubble.short { width: 32%; }
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-bubble { animation: none; opacity: 0.7; }
+}
