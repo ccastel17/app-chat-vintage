@@ -34,10 +34,14 @@ function renderDeviceList() {
       const li = document.createElement("li");
       li.className = room.room_id === activeRoomId ? "active" : "";
       li.innerHTML = `
-        <span class="device-label"></span>
-        <a class="device-action-link view-chat-link" target="_blank" rel="noopener" title="Ver chat">
-          <span class="action-icon">💬</span><span class="action-label">Ver chat</span>
-        </a>
+        <span class="device-row-top">
+          <span class="device-label"></span>
+        </span>
+        <span class="device-row-actions">
+          <a class="device-action-link view-chat-link" target="_blank" rel="noopener" title="Ver chat">
+            <span class="action-icon">💬</span><span class="action-label">Ver chat</span>
+          </a>
+        </span>
       `;
       li.querySelector(".device-label").textContent = room.label || room.room_id;
       const viewChatLink = li.querySelector(".view-chat-link");

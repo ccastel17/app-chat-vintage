@@ -171,11 +171,17 @@ button {
 #devices li.empty { color: #7d8792; cursor: default; }
 #devices li.empty:hover { background: none; }
 
+/* Nombre arriba, acciones abajo — un solo renglón no entra cómodo en los
+   240px fijos de la sidebar con dos botones con label */
 #devices li {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 6px;
 }
+
+.device-row-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.device-row-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
 #devices .online-dot {
   width: 7px;
@@ -576,7 +582,8 @@ button {
   .sidebar-top-actions button, .sidebar-top-actions a { width: auto; flex: 1; }
 
   #devices { flex-direction: row; overflow-x: auto; padding-bottom: 2px; min-width: 0; }
-  #devices li { flex-shrink: 0; }
+  /* En la tira horizontal, chip compacto: todo en una fila (sin label, solo ícono) */
+  #devices li { flex-shrink: 0; flex-direction: row; align-items: center; }
 
   #new-device-btn { width: auto; margin-top: 8px; }
   #new-device-form { flex-direction: row; flex-wrap: wrap; }

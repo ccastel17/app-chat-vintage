@@ -52,9 +52,12 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     dispositivo, dos acciones rápidas a una pestaña nueva — "💬 Ver chat"
     (`/device/[roomId]`, la pantalla real que ve el actor, de solo vista)
     y "📝 Editar lista" (`/control/contacts?room=[roomId]`, salta directo
-    a ese dispositivo ya seleccionado ahí). En desktop se ven con label,
-    en mobile/tablet (`≤860px`) solo el ícono para no comerse el ancho de
-    la tira horizontal (ver Responsive más abajo)
+    a ese dispositivo ya seleccionado ahí). En desktop, nombre arriba y
+    acciones (con label) abajo — los 240px fijos de la sidebar no
+    alcanzan para nombre + dos botones con texto en un solo renglón; en
+    mobile/tablet (`≤860px`) todo en una fila compacta, solo ícono sin
+    label, porque ahí la lista es una tira horizontal scrolleable (ver
+    Responsive más abajo)
   - Panel "Nombre del actor" (`rooms.label` + `rooms.avatar_url`) arriba de
     todo: cómo identifica el director a ese dispositivo en los paneles —
     nunca lo ve el actor, no tiene relación con `conversations.contact_name`

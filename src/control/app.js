@@ -294,14 +294,18 @@ function renderDeviceList() {
         onlineRoomIds.has(roomId) ? "online" : "",
       ].join(" ").trim();
       li.innerHTML = `
-        <span class="online-dot"></span>
-        <span class="device-label"></span>
-        <a class="device-action-link view-chat-link" target="_blank" rel="noopener" title="Ver chat">
-          <span class="action-icon">💬</span><span class="action-label">Ver chat</span>
-        </a>
-        <a class="device-action-link edit-list-link" target="_blank" rel="noopener" title="Editar lista">
-          <span class="action-icon">📝</span><span class="action-label">Editar lista</span>
-        </a>
+        <span class="device-row-top">
+          <span class="online-dot"></span>
+          <span class="device-label"></span>
+        </span>
+        <span class="device-row-actions">
+          <a class="device-action-link view-chat-link" target="_blank" rel="noopener" title="Ver chat">
+            <span class="action-icon">💬</span><span class="action-label">Ver chat</span>
+          </a>
+          <a class="device-action-link edit-list-link" target="_blank" rel="noopener" title="Editar lista">
+            <span class="action-icon">📝</span><span class="action-label">Editar lista</span>
+          </a>
+        </span>
       `;
       li.querySelector(".device-label").textContent = rooms.get(roomId)?.label || roomId;
       const viewChatLink = li.querySelector(".view-chat-link");
