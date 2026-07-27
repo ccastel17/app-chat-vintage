@@ -17,6 +17,7 @@ alter table rooms enable row level security;
 create policy "public read" on rooms for select using (true);
 create policy "public insert" on rooms for insert with check (true);
 create policy "public update" on rooms for update using (true);
+create policy "public delete" on rooms for delete using (true);
 
 alter publication supabase_realtime add table rooms;
 
