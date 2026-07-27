@@ -190,16 +190,30 @@ button {
 #devices .device-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #devices .device-sub { color: #7d8792; font-size: 11px; }
 
-#devices .view-chats-link {
+.device-action-link {
   flex-shrink: 0;
-  opacity: 0.6;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   text-decoration: none;
-  font-size: 13px;
-  padding: 2px 4px;
-  border-radius: 4px;
+  color: #c3ccd6;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
 }
 
-#devices .view-chats-link:hover { opacity: 1; background: rgba(255, 255, 255, 0.15); }
+.device-action-link:hover { color: #e9edf1; background: rgba(255, 255, 255, 0.16); }
+
+.device-action-link .action-icon { font-size: 13px; line-height: 1; }
+
+/* En mobile/tablet solo el ícono, sin label, para no comerse el ancho */
+@media (max-width: 860px) {
+  .device-action-link { padding: 5px 6px; }
+  .device-action-link .action-label { display: none; }
+}
 
 #new-device-btn {
   width: 100%;

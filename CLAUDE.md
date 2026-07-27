@@ -48,9 +48,13 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
   probar el producto
 - `/control` → mensajería en vivo del director
   - Lista de dispositivos (rooms + Presence para saber quién está online
-    ahora); botón "+ Nuevo dispositivo" para crear uno de antemano; ícono
-    👁 por dispositivo que abre su lista de chats (`/device/[roomId]`) en
-    una pestaña nueva
+    ahora); botón "+ Nuevo dispositivo" para crear uno de antemano; por
+    dispositivo, dos acciones rápidas a una pestaña nueva — "💬 Ver chat"
+    (`/device/[roomId]`, la pantalla real que ve el actor, de solo vista)
+    y "📝 Editar lista" (`/control/contacts?room=[roomId]`, salta directo
+    a ese dispositivo ya seleccionado ahí). En desktop se ven con label,
+    en mobile/tablet (`≤860px`) solo el ícono para no comerse el ancho de
+    la tira horizontal (ver Responsive más abajo)
   - Panel "Nombre del actor" (`rooms.label` + `rooms.avatar_url`) arriba de
     todo: cómo identifica el director a ese dispositivo en los paneles —
     nunca lo ve el actor, no tiene relación con `conversations.contact_name`
@@ -88,7 +92,9 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
   (separado de la mensajería en vivo a propósito, ver decisión de producto)
   - Por dispositivo: crear/editar/eliminar contactos simulados (nombre,
     estado, foto de avatar) y crear/deshacer links reales con otro actor;
-    ícono 👁 por dispositivo, igual que en `/control`
+    "💬 Ver chat" por dispositivo, mismo estilo que en `/control` (acá no
+    hace falta "Editar lista" — seleccionar el dispositivo en esta misma
+    pantalla ya es editar)
   - En una conversación linkeada, nombre/foto/estado también son editables
     — son la identidad que ve ESE actor del otro, independiente por lado
     (renombrar del lado de A no toca lo que ve B) y del `room_id` del otro
@@ -315,8 +321,9 @@ la lista de conversaciones).
   organico), y el modo lectura del director
 - Selector de conversación en `/control` cambiado de pestañas a
   desplegable ("Hablando en nombre de") para no confundir con qué contacto
-  se está hablando; ícono 👁 por dispositivo en `/control` y
-  `/control/contacts` para abrir su lista de chats en una pestaña nueva
+  se está hablando; acciones rápidas por dispositivo en `/control`
+  ("💬 Ver chat" + "📝 Editar lista", antes un único ícono 👁 ambiguo) y
+  `/control/contacts` ("💬 Ver chat")
 - Landing en `/` (`src/home/`) para compartir con quien prueba el
   producto: copy, CTA a `/control`, grilla de accesos a cada actor con
   botón "Copiar link" (URL real de instalación) y "Abrir →", y "cómo

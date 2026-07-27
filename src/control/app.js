@@ -296,11 +296,20 @@ function renderDeviceList() {
       li.innerHTML = `
         <span class="online-dot"></span>
         <span class="device-label"></span>
-        <a class="view-chats-link" target="_blank" rel="noopener" title="Ver lista de chats de este actor">👁</a>
+        <a class="device-action-link view-chat-link" target="_blank" rel="noopener" title="Ver chat">
+          <span class="action-icon">💬</span><span class="action-label">Ver chat</span>
+        </a>
+        <a class="device-action-link edit-list-link" target="_blank" rel="noopener" title="Editar lista">
+          <span class="action-icon">📝</span><span class="action-label">Editar lista</span>
+        </a>
       `;
       li.querySelector(".device-label").textContent = rooms.get(roomId)?.label || roomId;
-      li.querySelector(".view-chats-link").href = `/device/${roomId}`;
-      li.querySelector(".view-chats-link").addEventListener("click", (e) => e.stopPropagation());
+      const viewChatLink = li.querySelector(".view-chat-link");
+      viewChatLink.href = `/device/${roomId}`;
+      viewChatLink.addEventListener("click", (e) => e.stopPropagation());
+      const editListLink = li.querySelector(".edit-list-link");
+      editListLink.href = `/control/contacts?room=${encodeURIComponent(roomId)}`;
+      editListLink.addEventListener("click", (e) => e.stopPropagation());
       li.addEventListener("click", () => setActiveRoom(roomId));
       devicesEl.appendChild(li);
     });

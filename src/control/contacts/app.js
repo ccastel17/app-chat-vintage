@@ -35,11 +35,14 @@ function renderDeviceList() {
       li.className = room.room_id === activeRoomId ? "active" : "";
       li.innerHTML = `
         <span class="device-label"></span>
-        <a class="view-chats-link" target="_blank" rel="noopener" title="Ver lista de chats de este actor">👁</a>
+        <a class="device-action-link view-chat-link" target="_blank" rel="noopener" title="Ver chat">
+          <span class="action-icon">💬</span><span class="action-label">Ver chat</span>
+        </a>
       `;
       li.querySelector(".device-label").textContent = room.label || room.room_id;
-      li.querySelector(".view-chats-link").href = `/device/${room.room_id}`;
-      li.querySelector(".view-chats-link").addEventListener("click", (e) => e.stopPropagation());
+      const viewChatLink = li.querySelector(".view-chat-link");
+      viewChatLink.href = `/device/${room.room_id}`;
+      viewChatLink.addEventListener("click", (e) => e.stopPropagation());
       li.addEventListener("click", () => selectRoom(room.room_id));
       devicesEl.appendChild(li);
     });
@@ -54,6 +57,11 @@ async function loadRooms() {
   rooms.clear();
   data.forEach((r) => rooms.set(r.room_id, r));
   renderDeviceList();
+
+  // Si se llega desde "Editar lista" en /control (?room=roomId), seleccionar
+  // ese dispositivo directo en vez de arrancar en "Selecciona un dispositivo"
+  const preselect = new URLSearchParams(window.location.search).get("room");
+  if (preselect && rooms.has(preselect)) selectRoom(preselect);
 }
 
 // Cablea avatar/nombre/estado editables — comunes a tarjetas simuladas y
