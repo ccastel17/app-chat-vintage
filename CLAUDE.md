@@ -364,15 +364,18 @@ la lista de conversaciones).
   `/device/chat`, banner de notificación, visor de fotos, header de
   `/device`) — si se agrega un elemento nuevo pegado a un borde de
   pantalla, usar `max()` desde el principio
-- `#chat-root` (`/device/chat`) y `#list-root` (`/device`) fijan su alto
-  con `height: 100vh; height: 100dvh;` y además
-  `height: -webkit-fill-available;` como tercer fallback — en iOS
-  Safari/PWA instalada standalone, `100dvh` a veces no llega a cubrir
-  hasta el home indicator (bug histórico de WebKit) y deja un hueco
-  abajo con el fondo del `body` asomando, de un color distinto al del
-  composer. No se pudo probar en un iPhone real al aplicar el fix — si
-  vuelve a aparecer el hueco, confirmarlo con el reporter en el
-  dispositivo antes de asumir que ya quedó resuelto
+- `#chat-root` (`/device/chat`) y `#list-root` (`/device`) reportaron en
+  iPhone real un hueco abajo (con el fondo del `body` asomando, de un
+  color distinto al del composer) — probablemente `100dvh` sin llegar a
+  cubrir hasta el home indicator en PWA instalada standalone (bug
+  histórico de WebKit). Se probó `height: -webkit-fill-available;` como
+  tercer fallback, pero se revirtió enseguida: en el mismo dispositivo
+  dejó de abrir el teclado al tocar el input de mensaje — esa propiedad
+  tiene problemas conocidos de interacción con el teclado en iOS
+  (confunde el cálculo de layout cuando el viewport visual cambia). El
+  hueco original sigue sin resolverse; no reintentar con
+  `-webkit-fill-available` sin probar antes en un iPhone real que el
+  teclado siga abriendo bien
 - `#device-composer` tenía `padding-top: 8px` pero `padding-bottom:
   max(env(safe-area-inset-bottom, 0px), 18px)` — asimétrico a propósito
   (pensado para el home indicator), pero se veía raro en dispositivos
