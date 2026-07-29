@@ -128,6 +128,20 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     que aparece solo cuando el mensaje que está por mandar realmente
     va a disparar el banner (simulada + "📥 Mensaje del contacto"; en
     linkeada ya lo aclara `#linked-hint`, que siempre notifica)
+  - "🔔 Notificación de otro contacto": debajo de los controles rápidos,
+    para notificar al actor de un chat DISTINTO al que el director tiene
+    activo arriba, sin abandonar la vista actual (ej. mirando Paco↔Genis
+    y querés que a Paco le llegue algo de "Jefe" sin cambiar de hilo).
+    Desplegable con el resto de las conversaciones de ese mismo
+    dispositivo (simuladas y linkeadas, excluida la activa) + input de
+    texto. Siempre entrante — usa la misma lógica que la conversación
+    activa (linkeada → `sender_room_id` del otro actor +
+    `injected_by_director`; simulada → `direction: incoming`) pero
+    ignora el toggle del composer principal, porque acá el único caso de
+    uso es "le llega algo de otro lado". El mensaje queda guardado en esa
+    otra conversación (no en la que se está mirando) y dispara el mismo
+    banner de notificación de arriba; se oculta solo si el dispositivo no
+    tiene más chats que el activo
   - Modal "Apariencia" (🎨): editor de skins con preview en vivo tipo
     mini-teléfono
 - `/control/contacts` → gestión de la lista de chats de cada dispositivo
@@ -429,5 +443,13 @@ la lista de conversaciones).
   la llamada entrante). Probado con Playwright: aparece en la lista y
   en un chat distinto al que se está mirando, no aparece si es el
   mismo chat, y tap navega a la conversación correcta
+- Aviso `#notify-hint` junto al composer para que quede claro cuándo un
+  envío va a disparar la notificación (no era obvio al ser automático)
+- "🔔 Notificación de otro contacto" en `/control`: notificar al actor
+  de un chat distinto al activo sin cambiar de vista — ver detalle en
+  `/control` (Arquitectura de rutas). Probado con Playwright: excluye
+  la conversación activa del desplegable, no toca lo que el director
+  está mirando, funciona con destino simulado y linkeado, y el mensaje
+  queda guardado en la conversación correspondiente
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
   placeholder por diseño final, probar instalación real en Android

@@ -23,6 +23,10 @@ const typingBtn = document.getElementById("typing-btn");
 const seenBtn = document.getElementById("seen-btn");
 const callBtn = document.getElementById("call-btn");
 const clearChatBtn = document.getElementById("clear-chat-btn");
+const quickNotifyEl = document.getElementById("quick-notify");
+const quickNotifySelect = document.getElementById("quick-notify-select");
+const quickNotifyInput = document.getElementById("quick-notify-input");
+const quickNotifySendBtn = document.getElementById("quick-notify-send-btn");
 
 const newDeviceBtn = document.getElementById("new-device-btn");
 const newDeviceForm = document.getElementById("new-device-form");
@@ -172,6 +176,7 @@ function renderConversationSelect() {
   const items = [...conversations.values()];
   if (items.length === 0) {
     speakerControlEl.classList.add("hidden");
+    renderQuickNotifySelect();
     return;
   }
   speakerControlEl.classList.remove("hidden");
@@ -183,6 +188,29 @@ function renderConversationSelect() {
     conversationSelect.appendChild(opt);
   });
   if (activeConversationId) conversationSelect.value = activeConversationId;
+  renderQuickNotifySelect();
+}
+
+// Para notificar "de otro contacto" sin abandonar la conversación activa:
+// cualquier otro chat de este mismo dispositivo, simulado o linkeado
+// (excluye el que ya está seleccionado arriba, no tiene sentido notificar
+// de la misma conversación que ya estás mirando)
+function renderQuickNotifySelect() {
+  const others = [...conversations.values()].filter((c) => c.id !== activeConversationId);
+  if (others.length === 0) {
+    quickNotifyEl.classList.add("hidden");
+    return;
+  }
+  quickNotifyEl.classList.remove("hidden");
+  const previousValue = quickNotifySelect.value;
+  quickNotifySelect.innerHTML = "";
+  others.forEach((conversation) => {
+    const opt = document.createElement("option");
+    opt.value = conversation.id;
+    opt.textContent = `${conversation.kind === "linked" ? "🔗" : "💬"} ${conversation.contact_name}`;
+    quickNotifySelect.appendChild(opt);
+  });
+  if (others.some((c) => c.id === previousValue)) quickNotifySelect.value = previousValue;
 }
 
 conversationSelect.addEventListener("change", () => setActiveConversation(conversationSelect.value));
@@ -461,6 +489,7 @@ deleteRoomBtn.addEventListener("click", async () => {
   activeRoomLabel.textContent = "Selecciona un dispositivo";
   roomSettingsEl.classList.add("hidden");
   speakerControlEl.classList.add("hidden");
+  quickNotifyEl.classList.add("hidden");
   roomMessagesEl.innerHTML = "";
   renderDeviceList();
 });
@@ -506,6 +535,38 @@ function broadcastNewMessageNotification(conversation, { content, image_url }) {
     },
   });
 }
+
+// Notificación "de otro contacto" del mismo dispositivo: independiente de
+// la conversación activa (no la toca, no la muestra) — siempre entrante,
+// da igual el toggle del composer principal, porque acá el único caso de
+// uso es "le llega algo de otro lado". Queda guardada en esa otra
+// conversación, así que si el director la abre después el mensaje ya está.
+async function sendQuickNotification() {
+  const content = quickNotifyInput.value.trim();
+  const target = conversations.get(quickNotifySelect.value);
+  if (!content || !target) return;
+
+  const payload = { thread_id: target.thread_id, content };
+  if (target.kind === "linked") {
+    payload.sender_room_id = target.linked_room_id;
+    payload.injected_by_director = true;
+  } else {
+    payload.direction = "incoming";
+  }
+
+  const { error } = await supabase.from("messages").insert(payload);
+  if (error) {
+    console.error("Error enviando notificación de otro contacto:", error);
+    return;
+  }
+  quickNotifyInput.value = "";
+  broadcastNewMessageNotification(target, { content });
+}
+
+quickNotifySendBtn.addEventListener("click", sendQuickNotification);
+quickNotifyInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") sendQuickNotification();
+});
 
 sendBtn.addEventListener("click", async () => {
   const content = messageInput.value.trim();

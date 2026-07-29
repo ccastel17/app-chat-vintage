@@ -158,6 +158,49 @@ button {
 
 .danger-btn { background: #3a1f1f; color: #ff9b96; }
 
+#quick-notify {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  background: #1a1710;
+  border: 1px solid #3a3120;
+  border-radius: 10px;
+}
+
+#quick-notify.hidden { display: none; }
+
+#quick-notify-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #c9a35c;
+  flex-shrink: 0;
+}
+
+#quick-notify-select {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #3a3120;
+  background: #1a1f26;
+  color: #e9edf1;
+  font-size: 13px;
+}
+
+#quick-notify-input {
+  flex: 1;
+  min-width: 140px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #1f242b;
+  background: #1a1f26;
+  color: #e9edf1;
+}
+
+#quick-notify-send-btn { background: #c9a35c; color: #1a1710; font-weight: 600; }
+
 #direction-btn { background: #1f242b; white-space: nowrap; }
 #direction-btn.hidden { display: none; }
 

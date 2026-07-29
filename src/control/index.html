@@ -72,6 +72,17 @@
         <button id="call-btn">Simular llamada entrante</button>
         <button id="clear-chat-btn" class="danger-btn">🗑️ Vaciar chat</button>
       </div>
+
+      <!-- Notificar de OTRO contacto del mismo dispositivo, sin abandonar
+           la conversación activa (ej. estás viendo Paco↔Genis y querés
+           que a Paco le llegue algo de "Jefe" sin cambiar de hilo) -->
+      <div id="quick-notify" class="hidden">
+        <label id="quick-notify-label">🔔 Notificación de otro contacto
+          <select id="quick-notify-select"></select>
+        </label>
+        <input id="quick-notify-input" type="text" placeholder="Mensaje..." autocomplete="off" />
+        <button id="quick-notify-send-btn" type="button">Enviar</button>
+      </div>
     </main>
   </div>
 
