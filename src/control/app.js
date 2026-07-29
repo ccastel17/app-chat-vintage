@@ -18,6 +18,7 @@ const imageInput = document.getElementById("image-input");
 const attachBtn = document.getElementById("attach-btn");
 const directionBtn = document.getElementById("direction-btn");
 const linkedHintOtherNameEl = document.getElementById("linked-hint-other-name");
+const notifyHintEl = document.getElementById("notify-hint");
 const typingBtn = document.getElementById("typing-btn");
 const seenBtn = document.getElementById("seen-btn");
 const callBtn = document.getElementById("call-btn");
@@ -138,6 +139,18 @@ editRoomAvatarFile.addEventListener("change", async () => {
 function updateDirectionBtn() {
   directionBtn.textContent =
     direction === "incoming" ? "📥 Mensaje del contacto" : "📤 Mensaje del actor";
+  updateNotifyHint(activeConversation());
+}
+
+// El aviso de notificación (para simuladas) es independiente del de
+// linked-hint (que ya avisa siempre, sea cual sea el mensaje) — solo se
+// muestra cuando ESTE envío en particular va a notificar de verdad, para
+// que el director sepa en el momento si lo que está por mandar dispara
+// el banner en la pantalla del actor o no.
+function updateNotifyHint(conversation) {
+  const isLinked = conversation?.kind === "linked";
+  const show = Boolean(conversation) && !isLinked && isIncomingToActor(conversation);
+  notifyHintEl.classList.toggle("hidden", !show);
 }
 
 function applyConversationModeUI(conversation) {
@@ -152,6 +165,7 @@ function applyConversationModeUI(conversation) {
   if (isLinked) {
     linkedHintOtherNameEl.textContent = `como ${rooms.get(conversation.linked_room_id)?.label || conversation.linked_room_id}`;
   }
+  updateNotifyHint(conversation);
 }
 
 function renderConversationSelect() {

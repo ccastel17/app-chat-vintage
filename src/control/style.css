@@ -387,6 +387,17 @@ button {
 
 #linked-hint.hidden { display: none; }
 
+#notify-hint {
+  font-size: 12px;
+  color: #c9a35c;
+  background: #241f14;
+  border: 1px solid #3a3120;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+#notify-hint.hidden { display: none; }
+
 /* ---------- modal apariencia ---------- */
 #skin-modal {
   position: fixed;

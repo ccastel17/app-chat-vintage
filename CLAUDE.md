@@ -122,7 +122,12 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     (funcionaría con el teléfono bloqueado) porque necesita backend
     propio (VAPID keys, guardar suscripción por dispositivo) y iOS
     Safari tiene soporte inestable incluso en PWA instalada — mucha
-    superficie de falla para un rodaje en vivo
+    superficie de falla para un rodaje en vivo. Al ser automático (sin
+    botón propio) no era obvio para el director cuándo un envío iba a
+    notificar — se agregó `#notify-hint`, un aviso junto al composer
+    que aparece solo cuando el mensaje que está por mandar realmente
+    va a disparar el banner (simulada + "📥 Mensaje del contacto"; en
+    linkeada ya lo aclara `#linked-hint`, que siempre notifica)
   - Modal "Apariencia" (🎨): editor de skins con preview en vivo tipo
     mini-teléfono
 - `/control/contacts` → gestión de la lista de chats de cada dispositivo
