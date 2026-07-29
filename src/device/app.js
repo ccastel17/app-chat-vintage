@@ -1,12 +1,15 @@
 // Lista de chats del dispositivo (home)
 import { supabase, DEVICES_PRESENCE_CHANNEL, notificationsChannelName } from "../shared/supabaseClient.js";
 import { applySkinVars, cacheSkin, loadCachedSkin } from "../shared/skin.js";
+import { wireEmergencySliders, showEmergencyOverlay, hideEmergencyOverlay } from "../shared/emergencyOverlay.js";
 
 const listEl = document.getElementById("chat-list");
 const notificationBannerEl = document.getElementById("notification-banner");
 const notificationAvatarEl = document.getElementById("notification-avatar");
 const notificationNameEl = document.getElementById("notification-name");
 const notificationTextEl = document.getElementById("notification-text");
+const emergencyOverlayEl = document.getElementById("emergency-overlay");
+wireEmergencySliders(emergencyOverlayEl);
 
 // Pintar con el último skin conocido antes de esperar el fetch real —
 // para que el skeleton no arranque con los colores default del CSS
@@ -218,5 +221,7 @@ if (!roomId) {
   supabase
     .channel(notificationsChannelName(roomId))
     .on("broadcast", { event: "new_message" }, ({ payload }) => showNotificationBanner(payload))
+    .on("broadcast", { event: "emergency_screen_show" }, () => showEmergencyOverlay(emergencyOverlayEl))
+    .on("broadcast", { event: "emergency_screen_hide" }, () => hideEmergencyOverlay(emergencyOverlayEl))
     .subscribe();
 }

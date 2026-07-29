@@ -384,6 +384,23 @@ button {
 
 .contacts-link:hover { background: #263041; }
 
+/* ---------- pantalla de apagado/SOS ---------- */
+#emergency-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  background: #1f1414;
+  border: 1px solid #3a2020;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+#emergency-control.hidden { display: none; }
+
+#show-emergency-btn { background: #ff3b30; color: #fff; font-weight: 600; }
+
 /* ---------- selector de conversación + toggle de dirección, agrupados ---------- */
 #speaker-control {
   display: flex;

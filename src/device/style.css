@@ -179,3 +179,78 @@ html, body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ---------- pantalla de apagado / Ficha médica / SOS (solo visual) ---------- */
+#emergency-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15vh;
+  padding: 24px;
+  background: radial-gradient(ellipse 120% 55% at 32% 22%, #6b3a18, transparent 62%), #0a0806;
+}
+
+#emergency-overlay.hidden { display: none; }
+
+.emergency-slider {
+  position: relative;
+  width: min(100%, 320px);
+  height: 64px;
+  border-radius: 32px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+
+.emergency-slider.power { background: linear-gradient(90deg, #ff6a1f, #ff2d2d); }
+
+.emergency-slider.medical,
+.emergency-slider.sos {
+  background: rgba(140, 118, 104, 0.4);
+  backdrop-filter: blur(6px);
+}
+
+.slider-thumb {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  margin: 5px;
+  border-radius: 50%;
+  background: #fff;
+  color: #ff3b30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  flex-shrink: 0;
+  z-index: 1;
+  cursor: grab;
+  touch-action: none;
+}
+
+.emergency-slider.sos .slider-thumb {
+  background: #ff3b30;
+  color: #fff;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+
+.slider-label {
+  flex: 1;
+  text-align: center;
+  margin-right: 64px;
+  font-size: 16.5px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.emergency-slider.power .slider-label { color: #1a0800; }
+.emergency-slider.medical .slider-label,
+.emergency-slider.sos .slider-label { color: #fff; }

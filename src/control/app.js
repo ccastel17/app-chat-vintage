@@ -39,6 +39,9 @@ const editRoomAvatarFile = document.getElementById("edit-room-avatar-file");
 const editLabelInput = document.getElementById("edit-room-label");
 const saveRoomSettingsBtn = document.getElementById("save-room-settings-btn");
 const deleteRoomBtn = document.getElementById("delete-room-btn");
+const emergencyControlEl = document.getElementById("emergency-control");
+const showEmergencyBtn = document.getElementById("show-emergency-btn");
+const hideEmergencyBtn = document.getElementById("hide-emergency-btn");
 
 const openSkinModalBtn = document.getElementById("open-skin-modal-btn");
 const closeSkinModalBtn = document.getElementById("close-skin-modal-btn");
@@ -66,6 +69,7 @@ let direction = "incoming"; // "incoming" = mensaje del contacto | "outgoing" = 
 let activeThreadChannel = null;
 let activeNotificationChannel = null;
 let typingActive = false;
+let emergencyScreenVisible = false;
 
 const rooms = new Map(); // room_id -> { room_id, label }
 const onlineRoomIds = new Set();
@@ -297,6 +301,9 @@ async function setActiveRoom(roomId) {
   activeRoomLabel.textContent = rooms.get(roomId)?.label || roomId;
   roomSettingsEl.classList.remove("hidden");
   fillRoomSettings(roomId);
+  emergencyControlEl.classList.remove("hidden");
+  emergencyScreenVisible = false;
+  updateEmergencyButtons();
   renderDeviceList();
 
   await loadConversationsForRoom(roomId);
@@ -488,6 +495,8 @@ deleteRoomBtn.addEventListener("click", async () => {
   conversations.clear();
   activeRoomLabel.textContent = "Selecciona un dispositivo";
   roomSettingsEl.classList.add("hidden");
+  emergencyControlEl.classList.add("hidden");
+  emergencyScreenVisible = false;
   speakerControlEl.classList.add("hidden");
   quickNotifyEl.classList.add("hidden");
   roomMessagesEl.innerHTML = "";
@@ -566,6 +575,26 @@ async function sendQuickNotification() {
 quickNotifySendBtn.addEventListener("click", sendQuickNotification);
 quickNotifyInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendQuickNotification();
+});
+
+// Pantalla de apagado/SOS: a nivel dispositivo (no de conversación), se ve
+// sin importar qué esté mirando el actor — mismo canal que las
+// notificaciones, solo visual, el director la cierra remotamente
+function updateEmergencyButtons() {
+  showEmergencyBtn.classList.toggle("hidden", emergencyScreenVisible);
+  hideEmergencyBtn.classList.toggle("hidden", !emergencyScreenVisible);
+}
+
+showEmergencyBtn.addEventListener("click", () => {
+  activeNotificationChannel?.send({ type: "broadcast", event: "emergency_screen_show", payload: {} });
+  emergencyScreenVisible = true;
+  updateEmergencyButtons();
+});
+
+hideEmergencyBtn.addEventListener("click", () => {
+  activeNotificationChannel?.send({ type: "broadcast", event: "emergency_screen_hide", payload: {} });
+  emergencyScreenVisible = false;
+  updateEmergencyButtons();
 });
 
 sendBtn.addEventListener("click", async () => {

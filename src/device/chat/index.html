@@ -69,6 +69,23 @@
       </div>
     </div>
 
+    <!-- Pantalla de "mantener presionado el botón de encendido" (apagar /
+         Ficha médica / SOS) — solo visual, ningún slider dispara nada real -->
+    <div id="emergency-overlay" class="hidden">
+      <div class="emergency-slider power" data-slider>
+        <span class="slider-thumb">⏻</span>
+        <span class="slider-label">deslizar para apagar</span>
+      </div>
+      <div class="emergency-slider medical" data-slider>
+        <span class="slider-thumb">✱</span>
+        <span class="slider-label">Ficha médica</span>
+      </div>
+      <div class="emergency-slider sos" data-slider>
+        <span class="slider-thumb">SOS</span>
+        <span class="slider-label">Emergencia SOS</span>
+      </div>
+    </div>
+
     <!-- Composer: el actor escribe y envía sus propios mensajes -->
     <footer id="device-composer">
       <label id="device-attach-btn" for="device-image-input" aria-label="Adjuntar foto">📎</label>

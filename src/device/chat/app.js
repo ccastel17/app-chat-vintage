@@ -3,6 +3,7 @@ import { supabase, DEVICES_PRESENCE_CHANNEL, notificationsChannelName } from "..
 import { applySkinVars, cacheSkin, loadCachedSkin } from "../../shared/skin.js";
 import { isOutgoing } from "../../shared/conversation.js";
 import { uploadChatImage } from "../../shared/uploadImage.js";
+import { wireEmergencySliders, showEmergencyOverlay, hideEmergencyOverlay } from "../../shared/emergencyOverlay.js";
 
 // Pintar con el último skin conocido antes de esperar el fetch real —
 // para que el skeleton no arranque con los colores default del CSS
@@ -20,6 +21,8 @@ const notificationBannerEl = document.getElementById("notification-banner");
 const notificationAvatarEl = document.getElementById("notification-avatar");
 const notificationNameEl = document.getElementById("notification-name");
 const notificationTextEl = document.getElementById("notification-text");
+const emergencyOverlayEl = document.getElementById("emergency-overlay");
+wireEmergencySliders(emergencyOverlayEl);
 const callOverlayEl = document.getElementById("incoming-call-overlay");
 const callAvatarEl = document.getElementById("call-avatar");
 const callerNameEl = document.getElementById("caller-name");
@@ -400,5 +403,7 @@ if (!roomId || !conversationId) {
       clearTimeout(notificationHideTimeout);
       notificationHideTimeout = setTimeout(() => notificationBannerEl.classList.remove("visible"), 4500);
     })
+    .on("broadcast", { event: "emergency_screen_show" }, () => showEmergencyOverlay(emergencyOverlayEl))
+    .on("broadcast", { event: "emergency_screen_hide" }, () => hideEmergencyOverlay(emergencyOverlayEl))
     .subscribe();
 }

@@ -46,6 +46,14 @@
         <p class="field-hint">Solo lo ves vos en estos paneles — el actor nunca lo ve. Se usa como foto por default al linkear con otro actor.</p>
       </div>
 
+      <!-- Pantalla de apagado/SOS: a nivel dispositivo, no depende de
+           ninguna conversación puntual — funciona sin importar qué esté
+           mirando el actor en ese momento -->
+      <div id="emergency-control" class="hidden">
+        <button id="show-emergency-btn" type="button">🚨 Mostrar pantalla de apagado/SOS</button>
+        <button id="hide-emergency-btn" type="button" class="hidden danger-btn">Cerrar pantalla</button>
+      </div>
+
       <div id="speaker-control" class="hidden">
         <label id="conversation-select-wrap">Hablando en nombre de
           <select id="conversation-select"></select>

@@ -44,6 +44,23 @@
       <li class="skeleton-row" aria-hidden="true"><span class="skeleton-avatar"></span><span class="skeleton-lines"><span class="skeleton-line w40"></span><span class="skeleton-line w60"></span></span></li>
       <li class="skeleton-row" aria-hidden="true"><span class="skeleton-avatar"></span><span class="skeleton-lines"><span class="skeleton-line w60"></span><span class="skeleton-line w40"></span></span></li>
     </ul>
+
+    <!-- Pantalla de "mantener presionado el botón de encendido" (apagar /
+         Ficha médica / SOS) — solo visual, ningún slider dispara nada real -->
+    <div id="emergency-overlay" class="hidden">
+      <div class="emergency-slider power" data-slider>
+        <span class="slider-thumb">⏻</span>
+        <span class="slider-label">deslizar para apagar</span>
+      </div>
+      <div class="emergency-slider medical" data-slider>
+        <span class="slider-thumb">✱</span>
+        <span class="slider-label">Ficha médica</span>
+      </div>
+      <div class="emergency-slider sos" data-slider>
+        <span class="slider-thumb">SOS</span>
+        <span class="slider-label">Emergencia SOS</span>
+      </div>
+    </div>
   </div>
 
   <script src="/device/app.js" type="module"></script>

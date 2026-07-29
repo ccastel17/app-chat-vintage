@@ -142,6 +142,19 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     otra conversación (no en la que se está mirando) y dispara el mismo
     banner de notificación de arriba; se oculta solo si el dispositivo no
     tiene más chats que el activo
+  - "🚨 Mostrar pantalla de apagado/SOS": simula la pantalla que aparece
+    al mantener presionado el botón de encendido de un iPhone
+    ("deslizar para apagar" / "Ficha médica" / "Emergencia SOS") sobre
+    lo que sea que el actor esté mirando en ese momento (lista o
+    cualquier chat) — mismo canal de broadcast que las notificaciones
+    (`notificationsChannelName`), a nivel dispositivo, no de
+    conversación. Puramente visual: los tres sliders se pueden arrastrar
+    (`src/shared/emergencyOverlay.js`, con Pointer Events) para que se
+    vea real en cámara, pero ningún gesto dispara una acción real — al
+    soltar, el thumb siempre vuelve a su posición inicial. El director
+    la cierra a mano con "Cerrar pantalla" (no hay forma de que el
+    actor la cierre él mismo, a propósito — es él quien tiene que
+    actuar la escena, no interrumpirla tocando la pantalla)
   - Modal "Apariencia" (🎨): editor de skins con preview en vivo tipo
     mini-teléfono
 - `/control/contacts` → gestión de la lista de chats de cada dispositivo
@@ -451,5 +464,13 @@ la lista de conversaciones).
   la conversación activa del desplegable, no toca lo que el director
   está mirando, funciona con destino simulado y linkeado, y el mensaje
   queda guardado en la conversación correspondiente
+- "🚨 Mostrar pantalla de apagado/SOS" en `/control`: simula la pantalla
+  de mantener presionado el botón de encendido de un iPhone, sobre
+  cualquier pantalla del actor — ver detalle en `/control` (Arquitectura
+  de rutas). Puramente visual (sliders arrastrables que no disparan
+  ninguna acción real, `src/shared/emergencyOverlay.js`), el director la
+  cierra a mano. Probado con Playwright: aparece en la lista y en un
+  chat abierto sin importar cuál, el drag mueve el thumb y vuelve a su
+  lugar al soltar, y se cierra remotamente en ambas pantallas
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
   placeholder por diseño final, probar instalación real en Android
