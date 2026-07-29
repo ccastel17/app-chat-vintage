@@ -369,13 +369,23 @@ la lista de conversaciones).
   color distinto al del composer) — probablemente `100dvh` sin llegar a
   cubrir hasta el home indicator en PWA instalada standalone (bug
   histórico de WebKit). Se probó `height: -webkit-fill-available;` como
-  tercer fallback, pero se revirtió enseguida: en el mismo dispositivo
-  dejó de abrir el teclado al tocar el input de mensaje — esa propiedad
-  tiene problemas conocidos de interacción con el teclado en iOS
-  (confunde el cálculo de layout cuando el viewport visual cambia). El
-  hueco original sigue sin resolverse; no reintentar con
-  `-webkit-fill-available` sin probar antes en un iPhone real que el
-  teclado siga abriendo bien
+  tercer fallback y se revirtió por las dudas (ver abajo la causa real
+  del teclado) sin confirmar si de verdad era la causa — sigue sin
+  resolverse; si se retoma, probar primero en un iPhone real que el
+  teclado abra bien antes de asumir que esa propiedad es segura
+- **El teclado no abría en iPhone al tocar el input de mensaje, pero
+  solo estando instalada en la pantalla de inicio — en Safari andaba
+  bien.** Causa real: `user-scalable=no` en el `<meta viewport>` de
+  `/device` y `/device/chat`. Es un bug documentado de iOS: esa
+  combinación con `display: standalone` bloquea el teclado; en una
+  pestaña normal de Safari no se manifiesta. Se sacó `user-scalable=no`
+  de ambos viewports. Como consecuencia, reaparece el zoom automático
+  de iOS al enfocar un input con `font-size` menor a 16px (para eso
+  estaba `user-scalable=no`, en realidad) — se compensó con
+  `font-size: max(16px, var(--skin-font-size))` en
+  `#device-message-input` (el skin por default usa 15px, justo debajo
+  del umbral). Si se agrega otro `<input>` de texto en `/device` a
+  futuro, aplicar el mismo mínimo de 16px
 - `#device-composer` tenía `padding-top: 8px` pero `padding-bottom:
   max(env(safe-area-inset-bottom, 0px), 18px)` — asimétrico a propósito
   (pensado para el home indicator), pero se veía raro en dispositivos

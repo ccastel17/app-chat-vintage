@@ -259,7 +259,10 @@ html, body {
   background: var(--skin-bubble-incoming-bg);
   color: var(--skin-bubble-incoming-text);
   font-family: var(--skin-font-family);
-  font-size: var(--skin-font-size);
+  /* mínimo 16px: por debajo de eso iOS hace zoom automático al enfocar el
+     input (ahora que sacamos user-scalable=no del viewport, que bloqueaba
+     el teclado en standalone) */
+  font-size: max(16px, var(--skin-font-size));
 }
 
 #device-message-input:focus { outline: 2px solid var(--skin-accent); }
