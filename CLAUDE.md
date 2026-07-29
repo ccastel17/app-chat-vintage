@@ -114,7 +114,13 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     arriba) dispara automáticamente, sin botón aparte, un banner estilo
     notificación nativa en la pantalla del actor (avatar + nombre +
     preview, desliza desde arriba, se oculta solo a los ~4.5s, tap
-    navega al chat). Se ve en `/device` (la lista) y en `/device/chat`
+    navega al chat). Oculto se esconde con `translateY(-100vh)`, no un
+    `%` relativo a su propio alto — en un iPhone con notch/Dynamic
+    Island, `env(safe-area-inset-top)` ya empuja el banner varias
+    decenas de px hacia abajo antes de aplicar el transform, y un `%`
+    no alcanza a compensar eso (quedaba un pedacito asomado arriba,
+    solo visible en un dispositivo real, no en desktop/simulador sin
+    notch). Se ve en `/device` (la lista) y en `/device/chat`
     de **cualquier otra** conversación que tenga abierta — si ya está
     mirando esa misma conversación no se muestra (no tiene sentido
     avisarle de algo que ya está viendo en vivo). Implementado con un
