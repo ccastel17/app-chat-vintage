@@ -26,6 +26,10 @@ html, body {
   flex-direction: column;
   height: 100vh;
   height: 100dvh;
+  /* fallback específico de iOS Safari/PWA instalada: dvh a veces no cubre
+     hasta el home indicator y deja un hueco abajo con el fondo del body
+     asomando (bug histórico de WebKit en standalone) */
+  height: -webkit-fill-available;
 }
 
 #list-header {
