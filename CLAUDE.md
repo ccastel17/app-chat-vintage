@@ -349,6 +349,16 @@ la lista de conversaciones).
 - Priorizar estabilidad y simplicidad sobre features avanzadas
 - Todo el código debe funcionar offline-tolerant en lo posible (el wifi del
   set puede ser inestable)
+- En `/device` y `/device/chat`, cualquier `padding`/`top` que use
+  `env(safe-area-inset-*, fallback)` tiene que envolverlo en
+  `max(env(safe-area-inset-*, 0px), fallback)`. El `fallback` de `env()`
+  solo se usa cuando la variable no está definida — pero en dispositivos
+  reales (Android normal, iPhone sin notch) suele estar definida en
+  `0px`, un valor real, así que el fallback nunca entra en juego y el
+  elemento queda pegado al borde. Ya pasó varias veces (header de
+  `/device/chat`, banner de notificación, visor de fotos, header de
+  `/device`) — si se agrega un elemento nuevo pegado a un borde de
+  pantalla, usar `max()` desde el principio
 
 ## No tocar sin avisar antes
 - El pipeline de Playwright + ffmpeg ya funciona de forma independiente.
@@ -496,5 +506,11 @@ la lista de conversaciones).
   default), y los avisos de texto (`#linked-hint`, `#notify-hint`)
   pasaron de párrafo-con-caja a una línea sin fondo — ver detalle en
   `/control` (Arquitectura de rutas)
+- Bug de `env(safe-area-inset-*)` sin `max()` (ver Reglas de estilo de
+  código) encontrado en Android en el header de `/device` ("Chats" se
+  veía sin padding-top) — de paso se revisó y corrigió el mismo patrón
+  en el banner de notificación (su `top`, en ambas páginas) y el visor
+  de fotos de `/device/chat`, que tenían el mismo problema latente
+  aunque todavía no se hubiera reportado
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
   placeholder por diseño final, probar instalación real en Android

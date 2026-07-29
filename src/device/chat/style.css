@@ -288,7 +288,7 @@ html, body {
   justify-content: center;
   z-index: 20;
   cursor: zoom-out;
-  padding: env(safe-area-inset-top, 12px) 12px env(safe-area-inset-bottom, 12px);
+  padding: max(env(safe-area-inset-top, 0px), 12px) 12px max(env(safe-area-inset-bottom, 0px), 12px);
 }
 
 #image-viewer.hidden { display: none; }
@@ -340,7 +340,7 @@ html, body {
 /* ---------- banner de notificación simulada ---------- */
 #notification-banner {
   position: fixed;
-  top: env(safe-area-inset-top, 10px);
+  top: max(env(safe-area-inset-top, 0px), 10px);
   left: 10px;
   right: 10px;
   z-index: 30;
