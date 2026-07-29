@@ -64,7 +64,13 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     (eso es lo que el actor sí ve, por chat). Si no se completa, la UI cae
     al `room_id` crudo. La foto también sirve como default al crear un
     nuevo link con otro actor (cada lado la puede sobreescribir después
-    desde `/control/contacts`, igual que el nombre)
+    desde `/control/contacts`, igual que el nombre). "🗑️ Eliminar
+    dispositivo" (con confirmación, no se puede deshacer) borra el
+    `room`, lo que cascadea sus `conversations` en ambos lados de
+    cualquier link (FK `on delete cascade` en `room_id` y
+    `linked_room_id`); los `messages` de esos threads no tienen FK a
+    `conversations` así que se borran a mano antes, para no dejarlos
+    huérfanos
   - Selector de conversación del dispositivo activo (desplegable "Hablando
     en nombre de", 💬 simulada / 🔗 linkeada — antes eran pestañas, se
     cambió a desplegable porque no dejaba claro con qué contacto se estaba
@@ -248,9 +254,7 @@ RLS habilitado en todas las tablas con policies públicas de
 select/insert/update/delete (no hay autenticación de usuarios; el `room_id`
 actúa como código de acceso informal). La `publishable key` de Supabase
 está pensada para exponerse en el cliente, por eso vive directo en
-`src/shared/supabaseClient.js`. Nota: `rooms` es la única tabla sin policy
-de `delete` pública — borrar un dispositivo hoy requiere entrar al Table
-Editor de Supabase a mano, no hay UI para eso.
+`src/shared/supabaseClient.js`.
 
 La lista de dispositivos en `/control` y `/control/contacts` combina dos
 fuentes: `rooms` (quién tiene nombre, aunque esté offline) + **Supabase
@@ -389,6 +393,10 @@ la lista de conversaciones).
   (el mismo "Hablando en nombre de" de siempre); se descartó un segundo
   selector para elegir "en nombre de quién" porque solo tiene sentido
   una opción (el otro actor, nunca el dueño de la lista activa)
+- "🗑️ Eliminar dispositivo" en `/control` (panel "Nombre del actor") —
+  ya no hace falta entrar al Table Editor de Supabase a mano. Borra el
+  room, cascadea sus conversaciones (ambos lados si estaba linkeado) y
+  limpia los mensajes de esos threads a mano (sin FK a conversations).
+  Probado con Playwright: dispositivo suelto y par linkeado
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
-  placeholder por diseño final, probar instalación real en Android, UI
-  para borrar dispositivos (hoy requiere Table Editor de Supabase)
+  placeholder por diseño final, probar instalación real en Android

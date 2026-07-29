@@ -33,6 +33,7 @@ const editRoomAvatarEl = document.getElementById("edit-room-avatar");
 const editRoomAvatarFile = document.getElementById("edit-room-avatar-file");
 const editLabelInput = document.getElementById("edit-room-label");
 const saveRoomSettingsBtn = document.getElementById("save-room-settings-btn");
+const deleteRoomBtn = document.getElementById("delete-room-btn");
 
 const openSkinModalBtn = document.getElementById("open-skin-modal-btn");
 const closeSkinModalBtn = document.getElementById("close-skin-modal-btn");
@@ -394,6 +395,54 @@ saveRoomSettingsBtn.addEventListener("click", async () => {
     label: editLabelInput.value.trim() || activeRoomId,
   });
   if (error) console.error("Error guardando nombre:", error);
+});
+
+deleteRoomBtn.addEventListener("click", async () => {
+  if (!activeRoomId) return;
+  const label = rooms.get(activeRoomId)?.label || activeRoomId;
+  if (
+    !confirm(
+      `¿Eliminar el dispositivo "${label}"? Se borran también sus chats y mensajes (incluidos los del actor con el que esté linkeado). No se puede deshacer.`
+    )
+  )
+    return;
+
+  const roomId = activeRoomId;
+
+  // Los chats se cascadean solos al borrar el room (FK en room_id y
+  // linked_room_id), pero los mensajes no tienen FK a conversations — hay
+  // que borrarlos a mano para no dejarlos huérfanos.
+  const { data: relatedConversations, error: fetchError } = await supabase
+    .from("conversations")
+    .select("thread_id")
+    .or(`room_id.eq.${roomId},linked_room_id.eq.${roomId}`);
+  if (fetchError) {
+    console.error("Error buscando conversaciones del dispositivo:", fetchError);
+    return;
+  }
+  const threadIds = [...new Set(relatedConversations.map((c) => c.thread_id))];
+  if (threadIds.length > 0) {
+    const { error: msgError } = await supabase.from("messages").delete().in("thread_id", threadIds);
+    if (msgError) console.error("Error borrando mensajes del dispositivo:", msgError);
+  }
+
+  const { error } = await supabase.from("rooms").delete().eq("room_id", roomId);
+  if (error) {
+    console.error("Error eliminando dispositivo:", error);
+    return;
+  }
+
+  rooms.delete(roomId);
+  activeThreadChannel?.unsubscribe();
+  conversationsChannel?.unsubscribe();
+  activeRoomId = null;
+  activeConversationId = null;
+  conversations.clear();
+  activeRoomLabel.textContent = "Selecciona un dispositivo";
+  roomSettingsEl.classList.add("hidden");
+  speakerControlEl.classList.add("hidden");
+  roomMessagesEl.innerHTML = "";
+  renderDeviceList();
 });
 
 directionBtn.addEventListener("click", () => {
