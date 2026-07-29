@@ -10,6 +10,19 @@ import { wireEmergencySliders, showEmergencyOverlay, hideEmergencyOverlay } from
 const cachedSkin = loadCachedSkin();
 if (cachedSkin) applySkinVars(document.documentElement, cachedSkin);
 
+// #chat-root usa --app-height (con 100dvh de fallback) en vez de depender
+// solo de dvh — en iOS standalone, dvh combinado con
+// apple-mobile-web-app-status-bar-style=black-translucent puede quedar
+// mal calculado y no reaccionar bien a que se abra el teclado. Con
+// visualViewport el alto siempre refleja el área realmente visible.
+if (window.visualViewport) {
+  const setAppHeight = () => {
+    document.documentElement.style.setProperty("--app-height", `${window.visualViewport.height}px`);
+  };
+  setAppHeight();
+  window.visualViewport.addEventListener("resize", setAppHeight);
+}
+
 const backLink = document.getElementById("back-link");
 const messagesEl = document.getElementById("messages");
 const contactNameEl = document.getElementById("contact-name");

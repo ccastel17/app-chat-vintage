@@ -11,6 +11,16 @@ const notificationTextEl = document.getElementById("notification-text");
 const emergencyOverlayEl = document.getElementById("emergency-overlay");
 wireEmergencySliders(emergencyOverlayEl);
 
+// #list-root usa --app-height (con 100dvh de fallback) — ver detalle en
+// device/chat/app.js
+if (window.visualViewport) {
+  const setAppHeight = () => {
+    document.documentElement.style.setProperty("--app-height", `${window.visualViewport.height}px`);
+  };
+  setAppHeight();
+  window.visualViewport.addEventListener("resize", setAppHeight);
+}
+
 // Pintar con el último skin conocido antes de esperar el fetch real —
 // para que el skeleton no arranque con los colores default del CSS
 const cachedSkin = loadCachedSkin();

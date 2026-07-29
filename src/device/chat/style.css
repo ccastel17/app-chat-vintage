@@ -33,6 +33,11 @@ html, body {
   flex-direction: column;
   height: 100vh;
   height: 100dvh;
+  /* --app-height la actualiza app.js en vivo con window.visualViewport,
+     que sí reacciona de forma confiable a que se abra el teclado en iOS
+     standalone (a diferencia de dvh, que en esa combinación puede quedar
+     mal calculado) */
+  height: var(--app-height, 100dvh);
 }
 
 #chat-header {

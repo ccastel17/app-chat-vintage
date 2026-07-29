@@ -385,7 +385,21 @@ la lista de conversaciones).
   `font-size: max(16px, var(--skin-font-size))` en
   `#device-message-input` (el skin por default usa 15px, justo debajo
   del umbral). Si se agrega otro `<input>` de texto en `/device` a
-  futuro, aplicar el mismo mínimo de 16px
+  futuro, aplicar el mismo mínimo de 16px. **Sacar `user-scalable=no` no
+  alcanzó** — confirmado con el usuario que el teclado seguía sin abrir
+  después de ese fix (con foco visible en el input, o sea que el toque
+  sí llega y el DOM se enfoca bien; el bug es que iOS no levanta el
+  teclado igual). Sospecha actual: la combinación
+  `apple-mobile-web-app-status-bar-style=black-translucent` +
+  `viewport-fit=cover` (contenido a pantalla completa real, por debajo
+  del área del sistema) interactuando mal con `100dvh` específicamente
+  en standalone. Se agregó `interactive-widget=resizes-content` al
+  viewport y un alto dinámico atado a `window.visualViewport` (variable
+  `--app-height`, actualizada en cada resize del viewport visual) en vez
+  de depender solo de `dvh` — en `/device` y `/device/chat`. **Sin
+  confirmar en dispositivo real todavía** — si tampoco funciona, el
+  problema puede no tener solución vía CSS/HTML y haya que replantear el
+  layout (por ejemplo, sacar `black-translucent` o `viewport-fit=cover`)
 - `#device-composer` tenía `padding-top: 8px` pero `padding-bottom:
   max(env(safe-area-inset-bottom, 0px), 18px)` — asimétrico a propósito
   (pensado para el home indicator), pero se veía raro en dispositivos
