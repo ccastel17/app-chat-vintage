@@ -81,7 +81,12 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     `#speaker-control` (antes el toggle quedaba suelto al lado del
     composer, sin relación visual clara con el selector). Al elegir una:
     - **simulada**: hilo + composer + controles (toggle incoming/outgoing,
-      simular "escribiendo...", marcar como "visto", simular llamada)
+      simular "escribiendo...", marcar como "visto", simular llamada). El
+      propio composer también dispara "escribiendo..." solo mientras el
+      director tipea (debounce de 2s de inactividad, o al enviar) — igual
+      que el composer del actor en threads `linked`; el botón "Simular
+      'escribiendo...'" queda aparte para poder simular tipeo sin llegar
+      a escribir nada (pausa dramática, etc.)
     - **linkeada**: hilo en vivo (mensajes reales entre dos actores) —
       toggle y controles de simular deshabilitados/ocultos (no aplican:
       no hay "direction" que definir, ya está escribiendo/typing es
@@ -512,5 +517,10 @@ la lista de conversaciones).
   en el banner de notificación (su `top`, en ambas páginas) y el visor
   de fotos de `/device/chat`, que tenían el mismo problema latente
   aunque todavía no se hubiera reportado
+- El composer de `/control` no disparaba "escribiendo..." mientras el
+  director tipeaba (solo el botón manual lo hacía) — a diferencia del
+  composer del actor en threads `linked`, que sí lo hace solo. Agregado
+  con la misma lógica (debounce 2s), ver detalle en `/control`
+  (Arquitectura de rutas)
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
   placeholder por diseño final, probar instalación real en Android

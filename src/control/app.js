@@ -247,6 +247,7 @@ conversationSelect.addEventListener("change", () => setActiveConversation(conver
 async function setActiveConversation(conversationId) {
   activeConversationId = conversationId;
   quickNotifyExpanded = false;
+  clearTimeout(composerTypingTimeout);
   renderConversationSelect();
   const conversation = activeConversation();
   applyConversationModeUI(conversation);
@@ -638,6 +639,19 @@ sendBtn.addEventListener("click", async () => {
   messageInput.value = "";
   setTypingBroadcast(false);
   if (isIncomingToActor(conversation)) broadcastNewMessageNotification(conversation, { content });
+});
+
+// Mismo comportamiento que el composer del actor: mientras el director
+// tipea en nombre del contacto, dispara "escribiendo..." solo, sin
+// necesidad de tocar el botón manual — que sigue disponible para simular
+// tipeo sin llegar a escribir nada (pausa dramática, etc.)
+let composerTypingTimeout = null;
+messageInput.addEventListener("input", () => {
+  const conversation = activeConversation();
+  if (!conversation || conversation.kind === "linked") return;
+  setTypingBroadcast(true);
+  clearTimeout(composerTypingTimeout);
+  composerTypingTimeout = setTimeout(() => setTypingBroadcast(false), 2000);
 });
 
 imageInput.addEventListener("change", async () => {
