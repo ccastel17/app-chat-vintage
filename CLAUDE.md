@@ -373,6 +373,13 @@ la lista de conversaciones).
   composer. No se pudo probar en un iPhone real al aplicar el fix — si
   vuelve a aparecer el hueco, confirmarlo con el reporter en el
   dispositivo antes de asumir que ya quedó resuelto
+- `#device-composer` tenía `padding-top: 8px` pero `padding-bottom:
+  max(env(safe-area-inset-bottom, 0px), 18px)` — asimétrico a propósito
+  (pensado para el home indicator), pero se veía raro en dispositivos
+  sin ese inset real. Bajado el fallback a `8px` para que sea simétrico
+  por default; en un iPhone con home indicator real, `env()` (~34px)
+  sigue ganando por el `max()`, así que no se pierde la protección
+  donde de verdad hace falta
 
 ## No tocar sin avisar antes
 - El pipeline de Playwright + ffmpeg ya funciona de forma independiente.
