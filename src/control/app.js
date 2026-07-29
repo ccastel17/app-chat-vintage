@@ -1,5 +1,5 @@
 // Panel de control (director)
-import { supabase, DEVICES_PRESENCE_CHANNEL } from "../shared/supabaseClient.js";
+import { supabase, DEVICES_PRESENCE_CHANNEL, notificationsChannelName } from "../shared/supabaseClient.js";
 import { applySkinVars } from "../shared/skin.js";
 import { isOutgoing } from "../shared/conversation.js";
 import { uploadChatImage } from "../shared/uploadImage.js";
@@ -59,6 +59,7 @@ let activeRoomId = null;
 let activeConversationId = null;
 let direction = "incoming"; // "incoming" = mensaje del contacto | "outgoing" = mensaje del actor
 let activeThreadChannel = null;
+let activeNotificationChannel = null;
 let typingActive = false;
 
 const rooms = new Map(); // room_id -> { room_id, label }
@@ -258,6 +259,10 @@ async function setActiveRoom(roomId) {
 
   await loadConversationsForRoom(roomId);
 
+  activeNotificationChannel?.unsubscribe();
+  activeNotificationChannel = supabase.channel(notificationsChannelName(roomId));
+  activeNotificationChannel.subscribe();
+
   conversationsChannel?.unsubscribe();
   conversationsChannel = supabase
     .channel(`conversations-of:${roomId}`)
@@ -434,6 +439,7 @@ deleteRoomBtn.addEventListener("click", async () => {
 
   rooms.delete(roomId);
   activeThreadChannel?.unsubscribe();
+  activeNotificationChannel?.unsubscribe();
   conversationsChannel?.unsubscribe();
   activeRoomId = null;
   activeConversationId = null;
@@ -467,6 +473,26 @@ function messagePayloadFor(conversation, extra) {
   return payload;
 }
 
+// Un mensaje "llega" al actor (y amerita el banner de notificación) si es
+// simulado con direction "incoming", o si es una linkeada inyectada (que
+// siempre es "del otro actor", nunca del dueño de esta lista)
+function isIncomingToActor(conversation) {
+  return conversation.kind === "linked" || direction === "incoming";
+}
+
+function broadcastNewMessageNotification(conversation, { content, image_url }) {
+  activeNotificationChannel?.send({
+    type: "broadcast",
+    event: "new_message",
+    payload: {
+      conversationId: conversation.id,
+      contactName: conversation.contact_name,
+      avatarUrl: conversation.avatar_url,
+      content: content || (image_url ? "📷 Foto" : ""),
+    },
+  });
+}
+
 sendBtn.addEventListener("click", async () => {
   const content = messageInput.value.trim();
   const conversation = activeConversation();
@@ -479,6 +505,7 @@ sendBtn.addEventListener("click", async () => {
   }
   messageInput.value = "";
   setTypingBroadcast(false);
+  if (isIncomingToActor(conversation)) broadcastNewMessageNotification(conversation, { content });
 });
 
 imageInput.addEventListener("change", async () => {
@@ -497,7 +524,11 @@ imageInput.addEventListener("change", async () => {
   const { error } = await supabase
     .from("messages")
     .insert(messagePayloadFor(conversation, { content: "", image_url: imageUrl }));
-  if (error) console.error("Error enviando foto:", error);
+  if (error) {
+    console.error("Error enviando foto:", error);
+    return;
+  }
+  if (isIncomingToActor(conversation)) broadcastNewMessageNotification(conversation, { image_url: imageUrl });
 });
 
 function setTypingBroadcast(isTyping) {

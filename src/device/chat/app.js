@@ -1,5 +1,5 @@
 // Vista de un chat individual del dispositivo (actor)
-import { supabase, DEVICES_PRESENCE_CHANNEL } from "../../shared/supabaseClient.js";
+import { supabase, DEVICES_PRESENCE_CHANNEL, notificationsChannelName } from "../../shared/supabaseClient.js";
 import { applySkinVars, cacheSkin, loadCachedSkin } from "../../shared/skin.js";
 import { isOutgoing } from "../../shared/conversation.js";
 import { uploadChatImage } from "../../shared/uploadImage.js";
@@ -16,6 +16,10 @@ const contactStatusEl = document.getElementById("contact-status");
 const contactAvatarEl = document.getElementById("contact-avatar");
 const imageViewerEl = document.getElementById("image-viewer");
 const imageViewerImg = document.getElementById("image-viewer-img");
+const notificationBannerEl = document.getElementById("notification-banner");
+const notificationAvatarEl = document.getElementById("notification-avatar");
+const notificationNameEl = document.getElementById("notification-name");
+const notificationTextEl = document.getElementById("notification-text");
 const callOverlayEl = document.getElementById("incoming-call-overlay");
 const callAvatarEl = document.getElementById("call-avatar");
 const callerNameEl = document.getElementById("caller-name");
@@ -366,4 +370,35 @@ if (!roomId || !conversationId) {
       presenceChannel.track({ room_id: roomId, online_at: new Date().toISOString() });
     }
   });
+
+  // Banner de notificación simulada — solo tiene sentido si es de OTRA
+  // conversación (la que ya estás mirando no necesita "avisarte")
+  let notificationHideTimeout = null;
+  let notificationTargetConversationId = null;
+
+  notificationBannerEl.addEventListener("click", () => {
+    if (notificationTargetConversationId) {
+      window.location.href = `/device/${roomId}/chat/${notificationTargetConversationId}`;
+    }
+  });
+
+  supabase
+    .channel(notificationsChannelName(roomId))
+    .on("broadcast", { event: "new_message" }, ({ payload }) => {
+      if (payload.conversationId === conversationId) return;
+      notificationTargetConversationId = payload.conversationId;
+      if (payload.avatarUrl) {
+        notificationAvatarEl.style.backgroundImage = `url("${payload.avatarUrl}")`;
+        notificationAvatarEl.textContent = "";
+      } else {
+        notificationAvatarEl.style.backgroundImage = "none";
+        notificationAvatarEl.textContent = initials(payload.contactName);
+      }
+      notificationNameEl.textContent = payload.contactName;
+      notificationTextEl.textContent = payload.content;
+      notificationBannerEl.classList.add("visible");
+      clearTimeout(notificationHideTimeout);
+      notificationHideTimeout = setTimeout(() => notificationBannerEl.classList.remove("visible"), 4500);
+    })
+    .subscribe();
 }

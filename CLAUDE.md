@@ -106,6 +106,23 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     pasa de columna lateral a tira horizontal scrolleable arriba, para
     poder operar el panel desde el celular o una tablet además de una
     notebook
+  - Banner de notificación simulada: cada mensaje que "llega" al actor
+    (simulado con dirección entrante, o inyectado en una linkeada — ver
+    arriba) dispara automáticamente, sin botón aparte, un banner estilo
+    notificación nativa en la pantalla del actor (avatar + nombre +
+    preview, desliza desde arriba, se oculta solo a los ~4.5s, tap
+    navega al chat). Se ve en `/device` (la lista) y en `/device/chat`
+    de **cualquier otra** conversación que tenga abierta — si ya está
+    mirando esa misma conversación no se muestra (no tiene sentido
+    avisarle de algo que ya está viendo en vivo). Implementado con un
+    canal Realtime de broadcast por dispositivo (no por thread, porque
+    la notificación puede ser de un chat distinto al que el actor tiene
+    abierto en ese momento) — `notificationsChannelName(roomId)` en
+    `src/shared/supabaseClient.js`. No se evaluó Web Push real
+    (funcionaría con el teléfono bloqueado) porque necesita backend
+    propio (VAPID keys, guardar suscripción por dispositivo) y iOS
+    Safari tiene soporte inestable incluso en PWA instalada — mucha
+    superficie de falla para un rodaje en vivo
   - Modal "Apariencia" (🎨): editor de skins con preview en vivo tipo
     mini-teléfono
 - `/control/contacts` → gestión de la lista de chats de cada dispositivo
@@ -398,5 +415,14 @@ la lista de conversaciones).
   room, cascadea sus conversaciones (ambos lados si estaba linkeado) y
   limpia los mensajes de esos threads a mano (sin FK a conversations).
   Probado con Playwright: dispositivo suelto y par linkeado
+- Banner de notificación simulada en `/device` y `/device/chat`,
+  disparado automáticamente cuando el director manda un mensaje
+  entrante (o inyecta uno en una linkeada) — ver detalle en `/control`
+  (Arquitectura de rutas). Se decidió NO usar Web Push real por la
+  complejidad de backend + soporte inestable de iOS Safari, a favor de
+  un banner in-app vía broadcast (mismo patrón que "escribiendo..." y
+  la llamada entrante). Probado con Playwright: aparece en la lista y
+  en un chat distinto al que se está mirando, no aparece si es el
+  mismo chat, y tap navega a la conversación correcta
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
   placeholder por diseño final, probar instalación real en Android

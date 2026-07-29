@@ -25,6 +25,16 @@
 </head>
 <body>
   <div id="chat-root">
+    <!-- Banner de notificación simulada: de otra conversación distinta a
+         esta (si es la misma que ya estás mirando, no tiene sentido) -->
+    <div id="notification-banner">
+      <span id="notification-avatar"></span>
+      <span class="notification-body">
+        <span id="notification-name"></span>
+        <span id="notification-text"></span>
+      </span>
+    </div>
+
     <!-- Header simulando contacto -->
     <header id="chat-header">
       <a id="back-link" href="#" aria-label="Volver">‹</a>

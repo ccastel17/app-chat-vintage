@@ -13,3 +13,11 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 // abrirse, y /control lo escucha para armar la lista de dispositivos sin
 // necesidad de una tabla aparte.
 export const DEVICES_PRESENCE_CHANNEL = "presence:devices";
+
+// Canal por dispositivo (no por thread) para el banner de notificación
+// simulada — tanto /device (lista) como /device/chat (cualquier chat que
+// tengan abierto) lo escuchan, porque una notificación puede ser de una
+// conversación distinta a la que están mirando en ese momento.
+export function notificationsChannelName(roomId) {
+  return `notifications:${roomId}`;
+}

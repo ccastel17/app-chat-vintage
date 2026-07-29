@@ -1,8 +1,12 @@
 // Lista de chats del dispositivo (home)
-import { supabase, DEVICES_PRESENCE_CHANNEL } from "../shared/supabaseClient.js";
+import { supabase, DEVICES_PRESENCE_CHANNEL, notificationsChannelName } from "../shared/supabaseClient.js";
 import { applySkinVars, cacheSkin, loadCachedSkin } from "../shared/skin.js";
 
 const listEl = document.getElementById("chat-list");
+const notificationBannerEl = document.getElementById("notification-banner");
+const notificationAvatarEl = document.getElementById("notification-avatar");
+const notificationNameEl = document.getElementById("notification-name");
+const notificationTextEl = document.getElementById("notification-text");
 
 // Pintar con el último skin conocido antes de esperar el fetch real —
 // para que el skeleton no arranque con los colores default del CSS
@@ -182,4 +186,37 @@ if (!roomId) {
       presenceChannel.track({ room_id: roomId, online_at: new Date().toISOString() });
     }
   });
+
+  // Banner de notificación simulada (el director la dispara al mandar un
+  // mensaje entrante) — funciona para cualquier chat, no solo el que se
+  // esté por abrir, por eso escucha acá y no en /device/chat únicamente
+  let notificationHideTimeout = null;
+  let notificationTargetConversationId = null;
+
+  function showNotificationBanner({ conversationId, contactName, avatarUrl, content }) {
+    notificationTargetConversationId = conversationId;
+    if (avatarUrl) {
+      notificationAvatarEl.style.backgroundImage = `url("${avatarUrl}")`;
+      notificationAvatarEl.textContent = "";
+    } else {
+      notificationAvatarEl.style.backgroundImage = "none";
+      notificationAvatarEl.textContent = initials(contactName);
+    }
+    notificationNameEl.textContent = contactName;
+    notificationTextEl.textContent = content;
+    notificationBannerEl.classList.add("visible");
+    clearTimeout(notificationHideTimeout);
+    notificationHideTimeout = setTimeout(() => notificationBannerEl.classList.remove("visible"), 4500);
+  }
+
+  notificationBannerEl.addEventListener("click", () => {
+    if (notificationTargetConversationId) {
+      window.location.href = `/device/${roomId}/chat/${notificationTargetConversationId}`;
+    }
+  });
+
+  supabase
+    .channel(notificationsChannelName(roomId))
+    .on("broadcast", { event: "new_message" }, ({ payload }) => showNotificationBanner(payload))
+    .subscribe();
 }
