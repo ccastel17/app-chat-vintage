@@ -33,7 +33,10 @@
     </aside>
 
     <main id="control-panel">
-      <h2 id="active-room-label">Selecciona un dispositivo</h2>
+      <div id="room-header">
+        <h2 id="active-room-label">Selecciona un dispositivo</h2>
+        <button id="toggle-room-settings-btn" type="button" class="hidden" aria-label="Editar dispositivo">⚙️</button>
+      </div>
 
       <div id="room-settings" class="hidden">
         <span id="edit-room-avatar" class="avatar-preview"></span>
@@ -46,14 +49,6 @@
         <p class="field-hint">Solo lo ves vos en estos paneles — el actor nunca lo ve. Se usa como foto por default al linkear con otro actor.</p>
       </div>
 
-      <!-- Pantalla de apagado/SOS: a nivel dispositivo, no depende de
-           ninguna conversación puntual — funciona sin importar qué esté
-           mirando el actor en ese momento -->
-      <div id="emergency-control" class="hidden">
-        <button id="show-emergency-btn" type="button">🚨 Mostrar pantalla de apagado/SOS</button>
-        <button id="hide-emergency-btn" type="button" class="hidden danger-btn">Cerrar pantalla</button>
-      </div>
-
       <div id="speaker-control" class="hidden">
         <label id="conversation-select-wrap">Hablando en nombre de
           <select id="conversation-select"></select>
@@ -61,9 +56,9 @@
         <button id="direction-btn" type="button"></button>
       </div>
 
-      <p id="linked-hint" class="hidden">🔗 Conversación real entre dos actores — se ve en vivo. Si escribís acá, el mensaje se manda <strong id="linked-hint-other-name">como el otro actor</strong> a modo de excepción (ej. se quedó sin batería) — es indistinguible de uno real y dispara notificación en la pantalla del actor.</p>
+      <p id="linked-hint" class="hidden">🔗 Conversación real — si escribís, se manda <strong id="linked-hint-other-name">como el otro actor</strong> (excepción) y dispara notificación.</p>
 
-      <p id="notify-hint" class="hidden">🔔 Al enviar, le va a aparecer una notificación en pantalla al actor, como si le hubiera llegado un mensaje nuevo ahora.</p>
+      <p id="notify-hint" class="hidden">🔔 Este envío va a disparar notificación en la pantalla del actor.</p>
 
       <div id="room-messages"></div>
 
@@ -78,14 +73,18 @@
         <button id="typing-btn">Simular "escribiendo..."</button>
         <button id="seen-btn">Marcar como visto</button>
         <button id="call-btn">Simular llamada entrante</button>
+        <button id="show-emergency-btn" type="button">🚨 Pantalla de apagado/SOS</button>
+        <button id="hide-emergency-btn" type="button" class="hidden danger-btn">Cerrar pantalla</button>
+        <button id="quick-notify-toggle-btn" type="button" class="hidden">🔔 Notificar de otro contacto</button>
         <button id="clear-chat-btn" class="danger-btn">🗑️ Vaciar chat</button>
       </div>
 
       <!-- Notificar de OTRO contacto del mismo dispositivo, sin abandonar
            la conversación activa (ej. estás viendo Paco↔Genis y querés
-           que a Paco le llegue algo de "Jefe" sin cambiar de hilo) -->
+           que a Paco le llegue algo de "Jefe" sin cambiar de hilo).
+           Colapsado por default, lo abre el botón de arriba -->
       <div id="quick-notify" class="hidden">
-        <label id="quick-notify-label">🔔 Notificación de otro contacto
+        <label id="quick-notify-label">
           <select id="quick-notify-select"></select>
         </label>
         <input id="quick-notify-input" type="text" placeholder="Mensaje..." autocomplete="off" />

@@ -24,6 +24,7 @@ const seenBtn = document.getElementById("seen-btn");
 const callBtn = document.getElementById("call-btn");
 const clearChatBtn = document.getElementById("clear-chat-btn");
 const quickNotifyEl = document.getElementById("quick-notify");
+const quickNotifyToggleBtn = document.getElementById("quick-notify-toggle-btn");
 const quickNotifySelect = document.getElementById("quick-notify-select");
 const quickNotifyInput = document.getElementById("quick-notify-input");
 const quickNotifySendBtn = document.getElementById("quick-notify-send-btn");
@@ -33,13 +34,13 @@ const newDeviceForm = document.getElementById("new-device-form");
 const newRoomIdInput = document.getElementById("new-room-id");
 const cancelNewDeviceBtn = document.getElementById("cancel-new-device-btn");
 
+const toggleRoomSettingsBtn = document.getElementById("toggle-room-settings-btn");
 const roomSettingsEl = document.getElementById("room-settings");
 const editRoomAvatarEl = document.getElementById("edit-room-avatar");
 const editRoomAvatarFile = document.getElementById("edit-room-avatar-file");
 const editLabelInput = document.getElementById("edit-room-label");
 const saveRoomSettingsBtn = document.getElementById("save-room-settings-btn");
 const deleteRoomBtn = document.getElementById("delete-room-btn");
-const emergencyControlEl = document.getElementById("emergency-control");
 const showEmergencyBtn = document.getElementById("show-emergency-btn");
 const hideEmergencyBtn = document.getElementById("hide-emergency-btn");
 
@@ -109,6 +110,18 @@ function renderMessage(conversation, { id, content, image_url, direction, sender
 function initials(name) {
   return (name || "?").trim().charAt(0).toUpperCase();
 }
+
+// Colapsado por default al cambiar de dispositivo — es edición de setup
+// (nombre/foto/borrar), no algo que se toque a cada rato en vivo
+function collapseRoomSettings() {
+  roomSettingsEl.classList.add("hidden");
+  toggleRoomSettingsBtn.classList.remove("active");
+}
+
+toggleRoomSettingsBtn.addEventListener("click", () => {
+  const expanded = roomSettingsEl.classList.toggle("hidden") === false;
+  toggleRoomSettingsBtn.classList.toggle("active", expanded);
+});
 
 function fillRoomSettings(roomId) {
   const room = rooms.get(roomId);
@@ -199,13 +212,18 @@ function renderConversationSelect() {
 // cualquier otro chat de este mismo dispositivo, simulado o linkeado
 // (excluye el que ya está seleccionado arriba, no tiene sentido notificar
 // de la misma conversación que ya estás mirando)
+// Colapsado por default — el botón de #quick-actions lo abre/cierra, para
+// no ocupar una fila fija todo el tiempo cuando no se está usando
+let quickNotifyExpanded = false;
+
+function updateQuickNotifyVisibility(hasOthers) {
+  quickNotifyToggleBtn.classList.toggle("hidden", !hasOthers);
+  quickNotifyToggleBtn.classList.toggle("active", hasOthers && quickNotifyExpanded);
+  quickNotifyEl.classList.toggle("hidden", !(hasOthers && quickNotifyExpanded));
+}
+
 function renderQuickNotifySelect() {
   const others = [...conversations.values()].filter((c) => c.id !== activeConversationId);
-  if (others.length === 0) {
-    quickNotifyEl.classList.add("hidden");
-    return;
-  }
-  quickNotifyEl.classList.remove("hidden");
   const previousValue = quickNotifySelect.value;
   quickNotifySelect.innerHTML = "";
   others.forEach((conversation) => {
@@ -215,12 +233,20 @@ function renderQuickNotifySelect() {
     quickNotifySelect.appendChild(opt);
   });
   if (others.some((c) => c.id === previousValue)) quickNotifySelect.value = previousValue;
+  updateQuickNotifyVisibility(others.length > 0);
 }
+
+quickNotifyToggleBtn.addEventListener("click", () => {
+  quickNotifyExpanded = !quickNotifyExpanded;
+  const hasOthers = [...conversations.values()].some((c) => c.id !== activeConversationId);
+  updateQuickNotifyVisibility(hasOthers);
+});
 
 conversationSelect.addEventListener("change", () => setActiveConversation(conversationSelect.value));
 
 async function setActiveConversation(conversationId) {
   activeConversationId = conversationId;
+  quickNotifyExpanded = false;
   renderConversationSelect();
   const conversation = activeConversation();
   applyConversationModeUI(conversation);
@@ -299,9 +325,9 @@ async function setActiveRoom(roomId) {
   activeRoomId = roomId;
   activeConversationId = null;
   activeRoomLabel.textContent = rooms.get(roomId)?.label || roomId;
-  roomSettingsEl.classList.remove("hidden");
+  toggleRoomSettingsBtn.classList.remove("hidden");
+  collapseRoomSettings();
   fillRoomSettings(roomId);
-  emergencyControlEl.classList.remove("hidden");
   emergencyScreenVisible = false;
   updateEmergencyButtons();
   renderDeviceList();
@@ -494,10 +520,12 @@ deleteRoomBtn.addEventListener("click", async () => {
   activeConversationId = null;
   conversations.clear();
   activeRoomLabel.textContent = "Selecciona un dispositivo";
-  roomSettingsEl.classList.add("hidden");
-  emergencyControlEl.classList.add("hidden");
+  toggleRoomSettingsBtn.classList.add("hidden");
+  collapseRoomSettings();
   emergencyScreenVisible = false;
+  updateEmergencyButtons();
   speakerControlEl.classList.add("hidden");
+  quickNotifyToggleBtn.classList.add("hidden");
   quickNotifyEl.classList.add("hidden");
   roomMessagesEl.innerHTML = "";
   renderDeviceList();

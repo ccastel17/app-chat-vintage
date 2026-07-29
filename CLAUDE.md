@@ -70,7 +70,10 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     cualquier link (FK `on delete cascade` en `room_id` y
     `linked_room_id`); los `messages` de esos threads no tienen FK a
     `conversations` así que se borran a mano antes, para no dejarlos
-    huérfanos
+    huérfanos. Colapsado detrás de un ícono ⚙️ junto al nombre del
+    dispositivo — es edición de setup, no algo que se toque a cada rato
+    en vivo, y ocupaba espacio de forma permanente. Colapsa de nuevo
+    (por default) cada vez que se cambia de dispositivo
   - Selector de conversación del dispositivo activo (desplegable "Hablando
     en nombre de", 💬 simulada / 🔗 linkeada — antes eran pestañas, se
     cambió a desplegable porque no dejaba claro con qué contacto se estaba
@@ -128,33 +131,39 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     que aparece solo cuando el mensaje que está por mandar realmente
     va a disparar el banner (simulada + "📥 Mensaje del contacto"; en
     linkeada ya lo aclara `#linked-hint`, que siempre notifica)
-  - "🔔 Notificación de otro contacto": debajo de los controles rápidos,
-    para notificar al actor de un chat DISTINTO al que el director tiene
-    activo arriba, sin abandonar la vista actual (ej. mirando Paco↔Genis
-    y querés que a Paco le llegue algo de "Jefe" sin cambiar de hilo).
-    Desplegable con el resto de las conversaciones de ese mismo
-    dispositivo (simuladas y linkeadas, excluida la activa) + input de
-    texto. Siempre entrante — usa la misma lógica que la conversación
-    activa (linkeada → `sender_room_id` del otro actor +
-    `injected_by_director`; simulada → `direction: incoming`) pero
-    ignora el toggle del composer principal, porque acá el único caso de
-    uso es "le llega algo de otro lado". El mensaje queda guardado en esa
-    otra conversación (no en la que se está mirando) y dispara el mismo
-    banner de notificación de arriba; se oculta solo si el dispositivo no
-    tiene más chats que el activo
-  - "🚨 Mostrar pantalla de apagado/SOS": simula la pantalla que aparece
-    al mantener presionado el botón de encendido de un iPhone
-    ("deslizar para apagar" / "Ficha médica" / "Emergencia SOS") sobre
-    lo que sea que el actor esté mirando en ese momento (lista o
-    cualquier chat) — mismo canal de broadcast que las notificaciones
-    (`notificationsChannelName`), a nivel dispositivo, no de
-    conversación. Puramente visual: los tres sliders se pueden arrastrar
-    (`src/shared/emergencyOverlay.js`, con Pointer Events) para que se
-    vea real en cámara, pero ningún gesto dispara una acción real — al
-    soltar, el thumb siempre vuelve a su posición inicial. El director
-    la cierra a mano con "Cerrar pantalla" (no hay forma de que el
-    actor la cierre él mismo, a propósito — es él quien tiene que
-    actuar la escena, no interrumpirla tocando la pantalla)
+  - `#quick-actions` agrupa, además de "escribiendo..."/"visto"/llamada/
+    vaciar chat, dos herramientas más avanzadas como botones compactos
+    (no cajas propias, para no comerse espacio vertical del hilo):
+    - **"🚨 Pantalla de apagado/SOS"**: simula la pantalla que aparece al
+      mantener presionado el botón de encendido de un iPhone ("deslizar
+      para apagar" / "Ficha médica" / "Emergencia SOS") sobre lo que sea
+      que el actor esté mirando en ese momento (lista o cualquier chat)
+      — mismo canal de broadcast que las notificaciones
+      (`notificationsChannelName`), a nivel dispositivo, no de
+      conversación. Puramente visual: los tres sliders se pueden
+      arrastrar (`src/shared/emergencyOverlay.js`, con Pointer Events)
+      para que se vea real en cámara, pero ningún gesto dispara una
+      acción real — al soltar, el thumb siempre vuelve a su posición
+      inicial. El botón se convierte en "Cerrar pantalla" mientras está
+      activa; el director la cierra a mano, a propósito no hay forma de
+      que el actor la cierre él mismo (tiene que actuar la escena, no
+      interrumpirla tocando la pantalla)
+    - **"🔔 Notificar de otro contacto"**: despliega (colapsado por
+      default, un click lo abre/cierra) un desplegable + input para
+      notificar al actor de un chat DISTINTO al que el director tiene
+      activo arriba, sin abandonar la vista actual (ej. mirando
+      Paco↔Genis y querés que a Paco le llegue algo de "Jefe" sin
+      cambiar de hilo). Desplegable con el resto de las conversaciones
+      de ese mismo dispositivo (simuladas y linkeadas, excluida la
+      activa). Siempre entrante — usa la misma lógica que la
+      conversación activa (linkeada → `sender_room_id` del otro actor +
+      `injected_by_director`; simulada → `direction: incoming`) pero
+      ignora el toggle del composer principal, porque acá el único caso
+      de uso es "le llega algo de otro lado". El mensaje queda guardado
+      en esa otra conversación (no en la que se está mirando) y dispara
+      el mismo banner de notificación. El botón no aparece si el
+      dispositivo no tiene más chats que el activo; colapsa de nuevo
+      cada vez que se cambia de conversación
   - Modal "Apariencia" (🎨): editor de skins con preview en vivo tipo
     mini-teléfono
 - `/control/contacts` → gestión de la lista de chats de cada dispositivo
@@ -472,5 +481,14 @@ la lista de conversaciones).
   cierra a mano. Probado con Playwright: aparece en la lista y en un
   chat abierto sin importar cuál, el drag mueve el thumb y vuelve a su
   lugar al soltar, y se cierra remotamente en ambas pantallas
+- Layout de `/control` compactado: entre el panel "Nombre del actor",
+  "Pantalla de apagado/SOS" y "Notificar de otro contacto", cada feature
+  nueva había sumado su propia caja con borde/padding y casi no quedaba
+  alto para el hilo de mensajes. Se colapsó "Nombre del actor" detrás de
+  un ícono ⚙️, se movieron los botones de apagado/SOS y notificar-otro-
+  contacto a la fila compacta de `#quick-actions` (colapsado por
+  default), y los avisos de texto (`#linked-hint`, `#notify-hint`)
+  pasaron de párrafo-con-caja a una línea sin fondo — ver detalle en
+  `/control` (Arquitectura de rutas)
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
   placeholder por diseño final, probar instalación real en Android
