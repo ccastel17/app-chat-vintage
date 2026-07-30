@@ -41,6 +41,14 @@ html, body {
 }
 
 #chat-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* por debajo de la llamada entrante (10), el visor de fotos (20), el
+     banner de notificación (30) y la pantalla de apagado/SOS (40) — todos
+     esos son takeovers de pantalla completa y tienen que tapar el header */
+  z-index: 5;
   padding: max(env(safe-area-inset-top, 0px), 22px) 16px 12px;
   background: var(--skin-surface);
   display: flex;
@@ -79,7 +87,10 @@ html, body {
 #messages {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  /* padding-top compensa que #chat-header ahora es position:fixed (no
+     ocupa lugar en el flujo) — el alto real lo mide app.js con un
+     ResizeObserver, por si cambia (skin, tamaño de letra, safe-area) */
+  padding: var(--header-height, 70px) 16px 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;

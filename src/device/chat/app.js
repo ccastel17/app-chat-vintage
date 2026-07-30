@@ -23,6 +23,18 @@ if (window.visualViewport) {
   window.visualViewport.addEventListener("resize", setAppHeight);
 }
 
+// #chat-header es position:fixed (para que no se mueva si iOS scrollea la
+// página al abrir el teclado) — #messages compensa el espacio con
+// --header-height, medido en vivo por si cambia (skin, safe-area, etc.)
+const chatHeaderEl = document.getElementById("chat-header");
+if (window.ResizeObserver) {
+  new ResizeObserver(() => {
+    // offsetHeight (no contentRect): necesitamos el alto con padding
+    // incluido, que es lo que #messages tiene que dejar libre arriba
+    document.documentElement.style.setProperty("--header-height", `${chatHeaderEl.offsetHeight}px`);
+  }).observe(chatHeaderEl);
+}
+
 const backLink = document.getElementById("back-link");
 const messagesEl = document.getElementById("messages");
 const contactNameEl = document.getElementById("contact-name");

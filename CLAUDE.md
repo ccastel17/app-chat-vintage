@@ -202,6 +202,16 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     en threads simulados queda como `direction: outgoing`, igual que
     cuando el director simula una respuesta del actor
   - Debe verse indistinguible de una app de mensajería real
+  - `#chat-header` es `position: fixed` (no un flex item más de
+    `#chat-root`) para que no se mueva si iOS scrollea la página al
+    abrir el teclado (comportamiento a nivel sistema, no evitable solo
+    con `overflow: hidden`). `#messages` compensa el espacio con
+    `padding-top: var(--header-height, 70px)`, medido en vivo por
+    `app.js` con un `ResizeObserver` sobre el header (por si cambia:
+    skin, tamaño de letra, safe-area). `z-index: 5` — por debajo de la
+    llamada entrante/visor de fotos/banner de notificación/pantalla de
+    apagado, que son todos takeovers de pantalla completa y tienen que
+    tapar el header, no al revés
   - `/device/[roomId]` y `/device/[roomId]/chat/[conversationId]` son
     documentos HTML separados (no una SPA) — cada navegación entre
     lista↔chat recarga todo desde cero y reabre los canales Realtime, lo
