@@ -612,13 +612,16 @@ swipe) y reenvía el `_hide` de vuelta para que `/control` se resincronice
     disimula — `.home-screen-vignette` (capa nueva, `inset: 0` SIN
     sobre-escaneo, para que los % del degradé mapeen contra la pantalla
     visible real y no contra el alto extra de `.home-screen-bg`) funde la
-    foto a `#2a2722` (marrón oscuro, confirmado a ojo contra lo que
-    realmente se filtra en un iPhone real — se probó primero con `#000`
-    de estimación, no matcheaba) ya desde el 82% de la pantalla, sólido a
+    foto a `var(--skin-bg)` ya desde el 82% de la pantalla, sólido a
     partir del 96% — así, caiga donde caiga el corte real de iOS, la foto
-    ya es ese mismo marrón ahí y la transición es invisible. Sigue el
+    ya es ese mismo color ahí y la transición es invisible. Sigue el
     mismo criterio que la viñeta original (que oscurecía arriba para que
-    se lea la hora), solo que ahora también resuelve el corte de abajo
+    se lea la hora), solo que ahora también resuelve el corte de abajo.
+    Empezó hardcodeado a `#2a2722` (marrón, confirmado a ojo contra lo
+    que realmente se filtra en un iPhone real con skin Vintage activo —
+    se probó primero con `#000` de estimación, no matcheaba) — pasado a
+    `var(--skin-bg)` para que el mismo degradé sirva con cualquier skin
+    activo, no solo Vintage (ver más abajo, "degradé multi-skin")
   - **Videollamada**: acá no se puede fundir a un color sólido (arruina
     el chroma key). En cambio, se pintó de verde (`#00b140`) **cada capa
     del stack**, no solo `.call-tracker-screen` — también `.call-connected`
@@ -635,18 +638,41 @@ swipe) y reenvía el `_hide` de vuelta para que `/control` se resincronice
     vez de `inset: 0` (mejor esfuerzo de tamaño, no alcanza solo) +
     `::before` (no `::after`, para que pinte DEBAJO de los sliders en el
     mismo layer de stacking — `position:absolute` lo saca del flex-flow
-    así que no descentra nada) con el mismo degradé a `#2a2722` desde el
-    78%. Acá no hizo falta una capa nueva en el HTML como en la pantalla
-    de inicio porque el fondo ya vive directo en `#emergency-overlay`
-    (no hay imagen de por medio, es un radial-gradient), así que un
-    pseudo-elemento alcanza. Todavía sin confirmar en dispositivo real
+    así que no descentra nada) con el mismo degradé a `var(--skin-bg)`
+    desde el 78%. Acá no hizo falta una capa nueva en el HTML como en la
+    pantalla de inicio porque el fondo ya vive directo en
+    `#emergency-overlay` (no hay imagen de por medio, es un
+    radial-gradient), así que un pseudo-elemento alcanza. Todavía sin
+    confirmar en dispositivo real
   - **Pantalla de alarma** (`#alarm-overlay`): mismo tratamiento que
     apagado/SOS — `height: var(--app-height, 100dvh)` + `::before` con
-    el mismo degradé a `#2a2722` desde el 78%, detrás de `.alarm-info`/
-    `.alarm-actions`. Fondo también es un color plano (`#030405`), sin
-    imagen de por medio, mismo motivo por el que alcanza un
-    pseudo-elemento sin capa nueva en el HTML. Todavía sin confirmar en
-    dispositivo real
+    el mismo degradé a `var(--skin-bg)` desde el 78%, detrás de
+    `.alarm-info`/`.alarm-actions`. Fondo también es un color plano
+    (`#030405`), sin imagen de por medio, mismo motivo por el que
+    alcanza un pseudo-elemento sin capa nueva en el HTML. Todavía sin
+    confirmar en dispositivo real
+  - **Degradé multi-skin**: el color de fuga empezó hardcodeado a
+    `#2a2722` (tuneado a ojo con Vintage activo, el skin por default del
+    rodaje) — pasado a `var(--skin-bg)` en los tres overlays para que
+    seguir cualquier skin activo (negro en "WhatsApp oscuro", blanco en
+    "iMessage claro", marrón en "Vintage"), a pedido explícito para que
+    el efecto de continuidad no se rompiera si se cambia de skin.
+    **Excepción**: `#emergency-overlay` y `#alarm-overlay` tienen fondo
+    fijo siempre oscuro (imitan la pantalla real de iOS de apagado/SOS y
+    de alarma, que no cambian de color según la app de mensajería que
+    tengas — ver más arriba), así que en skin claro un degradé blanco
+    quedaría como un parche roto contra ese fondo que nunca cambia, en
+    vez de disimular el corte. Para esos dos casos puntuales, el degradé
+    se fuerza de vuelta a un oscuro fijo (`#030405`/`#0a0806`, el mismo
+    color que el fondo propio de cada uno) vía el selector
+    `:root[data-skin-mode="light"]`, que pisa el `var(--skin-bg)` de
+    arriba solo cuando el skin activo es claro. `data-skin-mode` lo
+    setea `applySkinVars()` (`src/shared/skin.js`) en el mismo elemento
+    donde ya pisa las variables `--skin-*` — hook genérico por si hace
+    falta ramificar por claro/oscuro en otro lado a futuro. La pantalla
+    de inicio NO tiene esta excepción porque su degradé funde una foto
+    (no un color de fondo fijo), así que seguir el skin ahí no genera el
+    mismo problema
 - "🔦"/"📷" de la pantalla de inicio pasaron de emoji a SVG inline plano
   (blanco, sin depender de la fuente de emoji del sistema) — el círculo
   de fondo (`.home-screen-icon-btn`) suma un `border: 1px solid` marrón

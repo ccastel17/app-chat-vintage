@@ -91,6 +91,10 @@ export function loadCachedSkin() {
 
 export function applySkinVars(target, skin) {
   const t = deriveSkinTokens(skin);
+  // Hook para CSS que necesita ramificar por modo claro/oscuro más allá
+  // de lo que los tokens de color solos permiten (ver el degradé de fuga
+  // de iOS en #alarm-overlay/#emergency-overlay en device/style.css)
+  if (target.setAttribute) target.setAttribute("data-skin-mode", skin.mode);
   target.style.setProperty("--skin-bg", t.bg);
   target.style.setProperty("--skin-surface", t.surface);
   target.style.setProperty("--skin-line", t.line);

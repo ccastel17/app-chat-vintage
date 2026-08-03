@@ -581,9 +581,26 @@ body.home-screen-active #notification-banner { z-index: 65; }
     180deg,
     rgba(0, 0, 0, 0) 0%,
     rgba(0, 0, 0, 0) 78%,
-    rgba(42, 39, 34, 0.6) 88%,
-    #2a2722 96%,
-    #2a2722 100%
+    color-mix(in srgb, var(--skin-bg) 60%, transparent) 88%,
+    var(--skin-bg) 96%,
+    var(--skin-bg) 100%
+  );
+}
+
+/* Esta pantalla imita la de apagado/SOS real de iOS — se queda siempre
+   oscura sin importar el skin del chat activo (ver #emergency-overlay
+   más arriba, que nunca usa --skin-bg). En skin claro, seguir el skin
+   en el degradé de arriba pintaría un parche blanco contra ese fondo
+   fijo — acá se lo devuelve a un oscuro fijo, igual que el resto de la
+   pantalla, para que siga viéndose "sin costura" */
+:root[data-skin-mode="light"] #emergency-overlay::before {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0) 78%,
+    rgba(10, 8, 6, 0.6) 88%,
+    #0a0806 96%,
+    #0a0806 100%
   );
 }
 
@@ -669,7 +686,7 @@ body.home-screen-active #notification-banner { z-index: 65; }
 
 #alarm-overlay.hidden { display: none; }
 
-/* mismo degradé a #2a2722 que el resto de los overlays (ver Reglas de
+/* mismo degradé a var(--skin-bg) que el resto de los overlays (ver Reglas de
    estilo de código, bug de clip de iOS en standalone) — ::before para
    pintar detrás de .alarm-info/.alarm-actions sin sacarlos del flujo */
 #alarm-overlay::before {
@@ -681,9 +698,24 @@ body.home-screen-active #notification-banner { z-index: 65; }
     180deg,
     rgba(0, 0, 0, 0) 0%,
     rgba(0, 0, 0, 0) 78%,
-    rgba(42, 39, 34, 0.6) 88%,
-    #2a2722 96%,
-    #2a2722 100%
+    color-mix(in srgb, var(--skin-bg) 60%, transparent) 88%,
+    var(--skin-bg) 96%,
+    var(--skin-bg) 100%
+  );
+}
+
+/* Misma razón que #emergency-overlay: la alarma también imita la
+   pantalla real de iOS y se queda siempre oscura (#030405 fijo, ver
+   arriba) sin importar el skin — en claro, el degradé vuelve a un
+   oscuro fijo en vez de --skin-bg para no crear un parche blanco */
+:root[data-skin-mode="light"] #alarm-overlay::before {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0) 78%,
+    rgba(3, 4, 5, 0.6) 88%,
+    #030405 96%,
+    #030405 100%
   );
 }
 
@@ -794,9 +826,9 @@ body.home-screen-active #notification-banner { z-index: 65; }
     rgba(0, 0, 0, 0.35) 0%,
     rgba(0, 0, 0, 0) 22%,
     rgba(0, 0, 0, 0) 62%,
-    rgba(42, 39, 34, 0.6) 82%,
-    #2a2722 96%,
-    #2a2722 100%
+    color-mix(in srgb, var(--skin-bg) 60%, transparent) 82%,
+    var(--skin-bg) 96%,
+    var(--skin-bg) 100%
   );
 }
 
