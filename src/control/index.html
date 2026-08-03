@@ -10,20 +10,34 @@
 <body>
   <header id="top-bar">
     <span class="top-bar-brand">🎬 Chat Vintage</span>
-    <a href="/" class="top-bar-home">🏠 Ir a la home</a>
+    <div class="top-bar-actions">
+      <button id="open-skin-modal-btn" type="button" class="top-icon-btn">🎨 <span class="btn-label">Apariencia</span></button>
+      <a href="/" class="top-icon-btn">🏠 <span class="btn-label">Ir a la home</span></a>
+    </div>
   </header>
 
   <div id="control-root">
     <aside id="device-list">
-      <div class="sidebar-top-actions">
-        <button id="open-skin-modal-btn" type="button" class="skin-modal-btn">🎨 Apariencia</button>
-        <a href="/control/contacts" class="contacts-link">👥 Contactos</a>
+      <!-- En desktop es un wrapper normal (sin estilo propio); en tablet
+           (≤860px) se convierte en la fila única que reemplaza a #top-bar +
+           tira de dispositivos — ver "topbar unificado" en style.css -->
+      <div id="mobile-topbar-row">
+        <!-- Contactos: en desktop se ve tal cual (arriba de la lista); en
+             tablet .sidebar-top-actions se oculta y el ícono de acá abajo
+             lo reemplaza, agrupado con Apariencia/Home -->
+        <div class="sidebar-top-actions">
+          <a href="/control/contacts" class="contacts-link">👥 Contactos</a>
+        </div>
+        <span class="top-bar-brand mobile-only" title="Chat Vintage">🎬</span>
+        <ul id="devices"></ul>
+        <button id="new-device-btn" type="button">+ <span class="btn-label">Nuevo dispositivo</span></button>
+        <div class="top-bar-actions mobile-only">
+          <button id="open-skin-modal-btn-mobile" type="button" class="top-icon-btn" title="Apariencia">🎨</button>
+          <a href="/control/contacts" class="top-icon-btn" title="Contactos">👥</a>
+          <a href="/" class="top-icon-btn" title="Ir a la home">🏠</a>
+        </div>
       </div>
 
-      <h2>Dispositivos</h2>
-      <ul id="devices"></ul>
-
-      <button id="new-device-btn" type="button">+ Nuevo dispositivo</button>
       <form id="new-device-form" class="hidden">
         <input id="new-room-id" placeholder="código (ej: actor1)" autocomplete="off" />
         <div class="form-actions">
@@ -34,63 +48,164 @@
     </aside>
 
     <main id="control-panel">
-      <div id="room-header">
-        <h2 id="active-room-label">Selecciona un dispositivo</h2>
-        <button id="toggle-room-settings-btn" type="button" class="hidden" aria-label="Editar dispositivo">⚙️</button>
+      <div id="chat-col">
+        <div id="room-header">
+          <h2 id="active-room-label">Selecciona un dispositivo</h2>
+          <button id="toggle-room-settings-btn" type="button" class="hidden" aria-label="Editar dispositivo">⚙️</button>
+        </div>
+
+        <div id="room-settings" class="hidden">
+          <span id="edit-room-avatar" class="avatar-preview"></span>
+          <label class="avatar-upload-label">Foto del actor
+            <input id="edit-room-avatar-file" type="file" accept="image/*" />
+          </label>
+          <label>Nombre del actor<input id="edit-room-label" placeholder="Ana" /></label>
+          <button id="save-room-settings-btn" type="button">Guardar</button>
+          <button id="delete-room-btn" type="button" class="danger-btn">🗑️ Eliminar dispositivo</button>
+          <p class="field-hint">Solo lo ves vos en estos paneles — el actor nunca lo ve. Se usa como foto por default al linkear con otro actor.</p>
+        </div>
+
+        <!-- Empty state: sin dispositivo seleccionado todavía -->
+        <div id="empty-state">
+          <svg width="120" height="120" viewBox="0 0 120 120" fill="none" aria-hidden="true">
+            <circle cx="60" cy="60" r="52" fill="#2f6fed" opacity="0.08"/>
+            <rect x="38" y="20" width="44" height="80" rx="10" fill="#171c23" stroke="#2a3038" stroke-width="1.5"/>
+            <rect x="44" y="30" width="32" height="52" rx="4" fill="#0b0f14"/>
+            <rect x="53" y="86" width="14" height="3" rx="1.5" fill="#2a3038"/>
+            <path d="M50 40h20M50 47h20M50 54h12" stroke="#3a4048" stroke-width="2.4" stroke-linecap="round" opacity="0.5"/>
+            <g>
+              <rect x="70" y="16" width="34" height="24" rx="10" fill="#2f6fed"/>
+              <path d="M78 40l-4 8 10-8" fill="#2f6fed"/>
+              <circle cx="80" cy="28" r="2.2" fill="#fff"/>
+              <circle cx="87" cy="28" r="2.2" fill="#fff"/>
+              <circle cx="94" cy="28" r="2.2" fill="#fff"/>
+            </g>
+            <circle cx="40" cy="94" r="5" fill="#3ecf6a"/>
+            <circle cx="40" cy="94" r="9" fill="#3ecf6a" opacity="0.25"/>
+          </svg>
+          <h3>Elegí un dispositivo para empezar</h3>
+          <p class="empty-sub">Seleccioná un actor de la lista para ver su chat en vivo y controlar lo que le llega en pantalla.</p>
+          <div class="empty-steps">
+            <div class="empty-step"><span class="empty-step-num">1</span><span class="empty-step-txt"><b>Elegí un dispositivo</b><span>de la lista, a la izquierda</span></span></div>
+            <div class="empty-step"><span class="empty-step-num">2</span><span class="empty-step-txt"><b>Elegí con quién habla</b><span>una conversación simulada 💬 o linkeada 🔗</span></span></div>
+            <div class="empty-step"><span class="empty-step-num">3</span><span class="empty-step-txt"><b>Operá en vivo</b><span>escribí, simulá "escribiendo...", una llamada o una notificación</span></span></div>
+          </div>
+        </div>
+
+        <div id="speaker-control" class="hidden">
+          <label id="conversation-select-wrap">Hablando en nombre de
+            <select id="conversation-select"></select>
+          </label>
+          <button id="direction-btn" type="button"></button>
+        </div>
+
+        <p id="linked-hint" class="hidden">🔗 Conversación real — si escribís, se manda <strong id="linked-hint-other-name">como el otro actor</strong> (excepción) y dispara notificación.</p>
+
+        <p id="notify-hint" class="hidden">🔔 Este envío va a disparar notificación en la pantalla del actor.</p>
+
+        <div id="room-messages" class="hidden"></div>
+
+        <div id="composer" class="hidden">
+          <input id="message-input" type="text" placeholder="Escribir mensaje..." />
+          <label id="attach-btn" for="image-input" aria-label="Adjuntar foto">📎</label>
+          <input id="image-input" type="file" accept="image/*" hidden />
+          <button id="voice-note-btn" type="button" aria-label="Enviar nota de voz" title="Enviar nota de voz simulada">🎙️</button>
+          <button id="send-btn">Enviar</button>
+        </div>
       </div>
 
-      <div id="room-settings" class="hidden">
-        <span id="edit-room-avatar" class="avatar-preview"></span>
-        <label class="avatar-upload-label">Foto del actor
-          <input id="edit-room-avatar-file" type="file" accept="image/*" />
-        </label>
-        <label>Nombre del actor<input id="edit-room-label" placeholder="Ana" /></label>
-        <button id="save-room-settings-btn" type="button">Guardar</button>
-        <button id="delete-room-btn" type="button" class="danger-btn">🗑️ Eliminar dispositivo</button>
-        <p class="field-hint">Solo lo ves vos en estos paneles — el actor nunca lo ve. Se usa como foto por default al linkear con otro actor.</p>
-      </div>
+      <aside id="actions-col" class="hidden">
+        <div id="actions-grid">
+          <button id="typing-btn" type="button" class="tile fam-blue">
+            <span class="tile-icon">✍️</span><span class="tile-label">Simular "escribiendo..."</span>
+          </button>
+          <button id="seen-btn" type="button" class="tile fam-blue">
+            <span class="tile-icon">✓✓</span><span class="tile-label">Marcar como visto</span>
+          </button>
+          <button id="call-btn" type="button" class="tile fam-blue">
+            <span class="tile-icon">📞</span><span class="tile-label">Simular llamada entrante</span>
+          </button>
+          <button id="video-call-btn" type="button" class="tile fam-blue">
+            <span class="tile-icon">📹</span><span class="tile-label">Simular videollamada</span>
+          </button>
+          <button id="show-emergency-btn" type="button" class="tile fam-violet">
+            <span class="tile-icon">🚨</span><span class="tile-label">Pantalla de apagado/SOS</span>
+          </button>
+          <button id="hide-emergency-btn" type="button" class="tile fam-violet hidden">
+            <span class="tile-icon">🚨</span><span class="tile-label">Cerrar pantalla</span>
+          </button>
+          <button id="alarm-btn" type="button" class="tile fam-violet">
+            <span class="tile-icon">⏰</span><span class="tile-label">Simular despertador</span>
+          </button>
 
-      <div id="speaker-control" class="hidden">
-        <label id="conversation-select-wrap">Hablando en nombre de
-          <select id="conversation-select"></select>
-        </label>
-        <button id="direction-btn" type="button"></button>
-      </div>
+          <!-- Hora que va a mostrar la alarma simulada — el director la
+               define antes de activarla. Colapsado por default, lo abre
+               el tile de arriba. Vive DENTRO de la grilla, justo después
+               de ese tile (grid-column: 1/-1 en style.css para que ocupe
+               la fila entera ahí mismo, no suelto al final de la
+               columna) -->
+          <div id="alarm-panel" class="hidden">
+            <label id="alarm-time-label">Hora a mostrar
+              <input id="alarm-time-input" type="time" />
+            </label>
+            <button id="alarm-activate-btn" type="button">Activar alarma</button>
+            <button id="alarm-deactivate-btn" type="button" class="hidden danger-btn">Cerrar alarma</button>
+          </div>
 
-      <p id="linked-hint" class="hidden">🔗 Conversación real — si escribís, se manda <strong id="linked-hint-other-name">como el otro actor</strong> (excepción) y dispara notificación.</p>
+          <button id="home-screen-btn" type="button" class="tile fam-violet">
+            <span class="tile-icon">🏠</span><span class="tile-label">Pantalla Inicio</span>
+          </button>
 
-      <p id="notify-hint" class="hidden">🔔 Este envío va a disparar notificación en la pantalla del actor.</p>
+          <!-- Fondo/hora/fecha de la pantalla de inicio simulada — mismo
+               criterio que #alarm-panel: colapsado, dentro de la grilla,
+               pegado a su tile. El fondo se persiste en rooms (como el
+               avatar del actor), no hace falta resubirlo cada vez -->
+          <div id="home-screen-panel" class="hidden">
+            <span id="home-screen-bg-preview" class="home-screen-bg-preview"></span>
+            <label class="home-screen-upload-label">Fondo
+              <input id="home-screen-bg-file" type="file" accept="image/*" />
+            </label>
+            <label id="home-screen-time-label">Hora
+              <input id="home-screen-time-input" type="time" />
+            </label>
+            <label id="home-screen-date-label">Fecha
+              <input id="home-screen-date-input" type="text" placeholder="Lun ago 3" />
+            </label>
+            <button id="home-screen-activate-btn" type="button">Activar pantalla</button>
+            <button id="home-screen-deactivate-btn" type="button" class="hidden danger-btn">Cerrar pantalla</button>
+            <button id="home-screen-help-btn" type="button" class="home-screen-help-btn">❔ Cómo poner una hora falsa en el iPhone</button>
+          </div>
 
-      <div id="room-messages"></div>
+          <button id="quick-notify-toggle-btn" type="button" class="tile fam-amber hidden">
+            <span class="tile-icon">🔔</span><span class="tile-label">Notificar de otro contacto</span>
+          </button>
 
-      <div id="composer">
-        <input id="message-input" type="text" placeholder="Escribir mensaje..." />
-        <label id="attach-btn" for="image-input" aria-label="Adjuntar foto">📎</label>
-        <input id="image-input" type="file" accept="image/*" hidden />
-        <button id="send-btn">Enviar</button>
-      </div>
+          <!-- Notificar de OTRO contacto del mismo dispositivo, sin abandonar
+               la conversación activa (ej. estás viendo Paco↔Genis y querés
+               que a Paco le llegue algo de "Jefe" sin cambiar de hilo).
+               Colapsado por default, lo abre el tile de arriba. Mismo
+               criterio que #alarm-panel: dentro de la grilla, pegado a
+               su tile -->
+          <div id="quick-notify" class="hidden">
+            <label id="quick-notify-label">
+              <select id="quick-notify-select"></select>
+            </label>
+            <input id="quick-notify-input" type="text" placeholder="Mensaje..." autocomplete="off" />
+            <button id="quick-notify-voice-btn" type="button" aria-label="Enviar nota de voz" title="Enviar nota de voz simulada">🎙️</button>
+            <button id="quick-notify-send-btn" type="button">Enviar</button>
+          </div>
 
-      <div id="quick-actions">
-        <button id="typing-btn">Simular "escribiendo..."</button>
-        <button id="seen-btn">Marcar como visto</button>
-        <button id="call-btn">Simular llamada entrante</button>
-        <button id="show-emergency-btn" type="button">🚨 Pantalla de apagado/SOS</button>
-        <button id="hide-emergency-btn" type="button" class="hidden danger-btn">Cerrar pantalla</button>
-        <button id="quick-notify-toggle-btn" type="button" class="hidden">🔔 Notificar de otro contacto</button>
-        <button id="clear-chat-btn" class="danger-btn">🗑️ Vaciar chat</button>
-      </div>
-
-      <!-- Notificar de OTRO contacto del mismo dispositivo, sin abandonar
-           la conversación activa (ej. estás viendo Paco↔Genis y querés
-           que a Paco le llegue algo de "Jefe" sin cambiar de hilo).
-           Colapsado por default, lo abre el botón de arriba -->
-      <div id="quick-notify" class="hidden">
-        <label id="quick-notify-label">
-          <select id="quick-notify-select"></select>
-        </label>
-        <input id="quick-notify-input" type="text" placeholder="Mensaje..." autocomplete="off" />
-        <button id="quick-notify-send-btn" type="button">Enviar</button>
-      </div>
+          <button id="clear-chat-btn" type="button" class="tile fam-red">
+            <span class="tile-icon">🗑️</span><span class="tile-label">Vaciar chat</span>
+          </button>
+          <a id="view-chat-action" class="tile fam-neutral" target="_blank" rel="noopener">
+            <span class="tile-icon">💬</span><span class="tile-label">Ir al chat</span>
+          </a>
+          <a id="edit-contacts-action" class="tile fam-neutral" target="_blank" rel="noopener">
+            <span class="tile-icon">📝</span><span class="tile-label">Editar contactos</span>
+          </a>
+        </div>
+      </aside>
     </main>
   </div>
 
@@ -171,6 +286,90 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Manual de "hora falsa en el iPhone", antes un link a un Artifact
+       externo — se trajo el contenido acá adentro (mismo texto) para no
+       depender de un link fuera de la app -->
+  <div id="home-screen-help-modal" class="hidden">
+    <div id="home-screen-help-content">
+      <div class="help-modal-header">
+        <h2>Hora falsa en el iPhone</h2>
+        <button id="close-home-screen-help-btn" type="button" aria-label="Cerrar">✕</button>
+      </div>
+      <p class="help-sub">
+        Para que la hora que se ve en la barra de estado del actor coincida con la
+        que se define acá (pantalla de inicio o alarma simuladas), en vez de
+        mostrar la hora real de la zona horaria del teléfono.
+      </p>
+
+      <div class="help-steps">
+        <div class="help-step">
+          <span class="help-step-num">1</span>
+          <div>
+            <h3>Abrí Ajustes</h3>
+            <p>En el iPhone del actor: <code>Ajustes → General → Fecha y hora</code></p>
+          </div>
+        </div>
+        <div class="help-step">
+          <span class="help-step-num">2</span>
+          <div>
+            <h3>Apagá "Fijar automáticamente"</h3>
+            <p>Es el switch que sincroniza el reloj con la red/operadora. Con esto apagado, el teléfono deja de corregirse solo.</p>
+          </div>
+        </div>
+        <div class="help-step">
+          <span class="help-step-num">3</span>
+          <div>
+            <h3>Tocá el campo de fecha y hora</h3>
+            <p>Aparece un selector debajo — poné la hora (y fecha, si hace falta) que necesite la escena.</p>
+          </div>
+        </div>
+        <div class="help-step">
+          <span class="help-step-num">4</span>
+          <div>
+            <h3>Listo</h3>
+            <p>El reloj se queda ahí y sigue corriendo desde ese valor — no vuelve solo a la hora real de Madrid ni de ninguna zona horaria.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-box warn">
+        <h4>⚠️ Probar antes del día de rodaje</h4>
+        <p>El switch "Fijar automáticamente" a veces aparece bloqueado o gris. Puede pasar por:</p>
+        <ul>
+          <li>Restricciones de la operadora o la región</li>
+          <li>Tiempo en pantalla con restricciones activas</li>
+          <li>Un perfil de gestión (MDM) instalado en el teléfono</li>
+          <li>"Compartir entre dispositivos" si el iPhone está en una Familia compartida</li>
+        </ul>
+        <p>Probalo en el iPhone real del actor con anticipación — si aparece bloqueado, hay que resolverlo antes, no en pleno rodaje.</p>
+      </div>
+
+      <div class="help-box danger">
+        <h4>🚫 No cambiar la fecha, solo la hora</h4>
+        <p>
+          Cambiar la <strong>hora</strong> dentro del mismo día es siempre seguro. Cambiar la
+          <strong>fecha</strong> a algo muy alejado (semanas, meses, años) puede romper la
+          conexión segura de la app con el servidor — el teléfono usa su reloj para
+          validar que la conexión sea de confianza, y si la fecha queda muy desfasada,
+          falla.
+        </p>
+      </div>
+
+      <div class="help-box after">
+        <h4>Después de la toma</h4>
+        <p>Reactivá "Fijar automáticamente" para que el teléfono vuelva a la hora real — si no, se puede quedar desfasado para el uso normal del actor.</p>
+      </div>
+
+      <p class="help-footnote">
+        Esto cambia <strong>solo la hora que se muestra</strong>. No oculta la señal, el wifi ni
+        el porcentaje de batería, y no hace desaparecer la barra de estado — eso, en un
+        iPhone normal, solo se puede ocultar con <strong>Acceso Guiado</strong>
+        (<code>Ajustes → Accesibilidad → Acceso Guiado</code>), que hay que activar a
+        mano antes de cada toma.
+      </p>
     </div>
   </div>
 

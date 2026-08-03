@@ -10,19 +10,35 @@
 <body>
   <header id="top-bar">
     <span class="top-bar-brand">🎬 Chat Vintage</span>
-    <a href="/" class="top-bar-home">🏠 Ir a la home</a>
+    <div class="top-bar-actions">
+      <a href="/control" class="top-icon-btn">💬 <span class="btn-label">Volver a mensajería</span></a>
+      <a href="/" class="top-icon-btn">🏠 <span class="btn-label">Ir a la home</span></a>
+    </div>
   </header>
 
   <div id="contacts-root">
     <aside id="device-list">
-      <a href="/control" class="back-link">‹ Volver a mensajería</a>
-
-      <h2>Dispositivos</h2>
-      <ul id="devices"></ul>
+      <!-- Mismo patrón que /control: en desktop es un wrapper normal; en
+           tablet (≤860px) se convierte en la fila única que reemplaza a
+           #top-bar + tira de dispositivos -->
+      <div id="mobile-topbar-row">
+        <div class="sidebar-top-actions">
+          <a href="/control" class="contacts-link">💬 Volver a mensajería</a>
+        </div>
+        <span class="top-bar-brand mobile-only" title="Chat Vintage">🎬</span>
+        <ul id="devices"></ul>
+        <div class="top-bar-actions mobile-only">
+          <a href="/control" class="top-icon-btn" title="Volver a mensajería">💬</a>
+          <a href="/" class="top-icon-btn" title="Ir a la home">🏠</a>
+        </div>
+      </div>
     </aside>
 
     <main id="contacts-panel">
-      <h2 id="active-room-label">Selecciona un dispositivo</h2>
+      <div id="room-header">
+        <h2 id="active-room-label">Selecciona un dispositivo</h2>
+        <a id="view-chat-link" class="view-chat-btn hidden" target="_blank" rel="noopener">💬 Ver chat</a>
+      </div>
 
       <div id="conversation-list"></div>
 

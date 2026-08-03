@@ -1,8 +1,9 @@
 // Panel de gestión de contactos/conversaciones por dispositivo
-import { supabase } from "../../shared/supabaseClient.js";
+import { supabase, DEVICES_PRESENCE_CHANNEL } from "../../shared/supabaseClient.js";
 
 const devicesEl = document.getElementById("devices");
 const activeRoomLabel = document.getElementById("active-room-label");
+const viewChatLink = document.getElementById("view-chat-link");
 const conversationListEl = document.getElementById("conversation-list");
 const addActionsEl = document.getElementById("add-actions");
 const addSimulatedBtn = document.getElementById("add-simulated-btn");
@@ -14,6 +15,7 @@ const linkCandidatesEl = document.getElementById("link-candidates");
 const closeLinkModalBtn = document.getElementById("close-link-modal-btn");
 
 const rooms = new Map(); // room_id -> { room_id, label }
+const onlineRoomIds = new Set();
 let activeRoomId = null;
 const conversations = new Map(); // id -> conversation row del room activo
 let conversationsChannel = null;
@@ -22,6 +24,9 @@ function initials(name) {
   return (name || "?").trim().charAt(0).toUpperCase();
 }
 
+// Mismo markup/clases que /control (avatar + nombre, sin acciones en la
+// fila — "Ver chat" vive arriba del todo, junto al nombre del dispositivo
+// activo, ver #room-header)
 function renderDeviceList() {
   devicesEl.innerHTML = "";
   if (rooms.size === 0) {
@@ -32,25 +37,44 @@ function renderDeviceList() {
     .sort((a, b) => (a.label || a.room_id).localeCompare(b.label || b.room_id))
     .forEach((room) => {
       const li = document.createElement("li");
-      li.className = room.room_id === activeRoomId ? "active" : "";
+      li.className = [
+        room.room_id === activeRoomId ? "active" : "",
+        onlineRoomIds.has(room.room_id) ? "online" : "",
+      ].join(" ").trim();
       li.innerHTML = `
-        <span class="device-row-top">
-          <span class="device-label"></span>
+        <span class="device-avatar-wrap">
+          <span class="device-avatar"></span>
+          <span class="device-presence"></span>
         </span>
-        <span class="device-row-actions">
-          <a class="device-action-link view-chat-link" target="_blank" rel="noopener" title="Ver chat">
-            <span class="action-icon">💬</span><span class="action-label">Ver chat</span>
-          </a>
-        </span>
+        <span class="device-label"></span>
       `;
+      const avatarEl = li.querySelector(".device-avatar");
+      if (room.avatar_url) {
+        avatarEl.style.backgroundImage = `url("${room.avatar_url}")`;
+        avatarEl.textContent = "";
+      } else {
+        avatarEl.style.backgroundImage = "none";
+        avatarEl.textContent = initials(room.label || room.room_id);
+      }
       li.querySelector(".device-label").textContent = room.label || room.room_id;
-      const viewChatLink = li.querySelector(".view-chat-link");
-      viewChatLink.href = `/device/${room.room_id}`;
-      viewChatLink.addEventListener("click", (e) => e.stopPropagation());
       li.addEventListener("click", () => selectRoom(room.room_id));
       devicesEl.appendChild(li);
     });
 }
+
+const presenceChannel = supabase.channel(DEVICES_PRESENCE_CHANNEL, {
+  config: { presence: { key: "control-contacts" } },
+});
+presenceChannel
+  .on("presence", { event: "sync" }, () => {
+    const state = presenceChannel.presenceState();
+    onlineRoomIds.clear();
+    Object.keys(state)
+      .filter((key) => key !== "control-contacts" && key !== "control")
+      .forEach((roomId) => onlineRoomIds.add(roomId));
+    renderDeviceList();
+  })
+  .subscribe();
 
 async function loadRooms() {
   const { data, error } = await supabase.from("rooms").select("*").order("label");
@@ -184,6 +208,8 @@ async function selectRoom(roomId) {
   activeRoomId = roomId;
   activeRoomLabel.textContent = rooms.get(roomId)?.label || roomId;
   addActionsEl.classList.remove("hidden");
+  viewChatLink.href = `/device/${roomId}`;
+  viewChatLink.classList.remove("hidden");
   renderDeviceList();
 
   const { data, error } = await supabase.from("conversations").select("*").eq("room_id", roomId);

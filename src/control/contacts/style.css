@@ -18,16 +18,28 @@ body {
 
 .top-bar-brand { font-size: 13px; font-weight: 700; color: #e9edf1; }
 
-.top-bar-home {
+.top-bar-actions { display: flex; align-items: center; gap: 8px; }
+
+.top-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12.5px;
+  font-weight: 600;
   color: #9aa4af;
   text-decoration: none;
   background: #1a1f26;
+  border: none;
   padding: 6px 12px;
   border-radius: 6px;
+  cursor: pointer;
 }
 
-.top-bar-home:hover { background: #263041; color: #e9edf1; }
+.top-icon-btn:hover { background: #263041; color: #e9edf1; }
+
+/* En la fila unificada de tablet, los botones del topbar quedan solo con
+   ícono (ver breakpoint más abajo) */
+.btn-label { white-space: nowrap; }
 
 #contacts-root {
   display: grid;
@@ -39,69 +51,112 @@ body {
   background: #0b0f14;
   padding: 16px;
   border-right: 1px solid #1f242b;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.back-link {
-  display: block;
-  color: #7d8792;
-  font-size: 13px;
-  text-decoration: none;
-  margin-bottom: 16px;
-}
-
-.back-link:hover { color: #e9edf1; }
-
-#device-list h2 { font-size: 14px; margin-bottom: 12px; color: #9aa4af; }
+/* Mismo patrón que /control: en desktop es transparente (los elementos
+   .mobile-only ni se muestran); en tablet se convierte en la fila única
+   que reemplaza a #top-bar + tira de dispositivos */
+#mobile-topbar-row { display: contents; }
+.mobile-only { display: none; }
 
 #devices { list-style: none; display: flex; flex-direction: column; gap: 4px; }
 
+/* ---------- lista de dispositivos: avatar + nombre (igual que /control) ---------- */
 #devices li {
-  padding: 8px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
-}
-
-.device-row-top { display: flex; align-items: center; min-width: 0; }
-.device-row-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-
-.device-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-.device-action-link {
-  flex-shrink: 0;
-  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  text-decoration: none;
-  color: #c3ccd6;
-  font-size: 11.5px;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 14px;
   font-weight: 600;
-  white-space: nowrap;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.device-action-link:hover { color: #e9edf1; background: rgba(255, 255, 255, 0.16); }
-
-.device-action-link .action-icon { font-size: 13px; line-height: 1; }
-
-/* En mobile/tablet solo el ícono, sin label, para no comerse el ancho */
-@media (max-width: 860px) {
-  .device-action-link { padding: 5px 6px; }
-  .device-action-link .action-label { display: none; }
 }
 
 #devices li:hover { background: #1a1f26; }
-#devices li.active { background: #2f6fed; color: white; }
-#devices li.empty { color: #7d8792; cursor: default; }
+#devices li.active { background: #171c23; }
+
+#devices li.empty { color: #7d8792; cursor: default; font-weight: 400; font-size: 13px; }
 #devices li.empty:hover { background: none; }
 
-#contacts-panel { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+.device-avatar-wrap { position: relative; width: 40px; height: 40px; flex-shrink: 0; }
+
+.device-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #2f6fed center / cover no-repeat;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+}
+
+#devices li.active .device-avatar { border-color: #2f6fed; box-shadow: 0 0 0 2px rgba(47,111,237,0.35); }
+
+.device-presence {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #4a5261;
+  border: 2px solid #0b0f14;
+}
+
+#devices li.online .device-presence { background: #34c759; }
+
+.device-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- acciones de arriba de la sidebar ---------- */
+.sidebar-top-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.contacts-link {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: #1f242b;
+  color: #e9edf1;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.contacts-link:hover { background: #263041; }
+
+#contacts-panel { padding: 24px; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+#room-header { display: flex; align-items: center; gap: 10px; }
+
+.view-chat-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #9aa4af;
+  text-decoration: none;
+  background: #1f242b;
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+.view-chat-btn:hover { background: #263041; color: #e9edf1; }
+.view-chat-btn.hidden { display: none; }
 
 button {
   padding: 10px 16px;
@@ -226,7 +281,7 @@ button {
 
 #close-link-modal-btn { background: #1f242b; width: 100%; }
 
-/* ---------- responsive: móvil / tablet ---------- */
+/* ---------- responsive: móvil / tablet (igual que /control) ---------- */
 @media (max-width: 860px) {
   #contacts-root {
     grid-template-columns: minmax(0, 1fr);
@@ -235,15 +290,66 @@ button {
     min-height: calc(100vh - 44px);
   }
 
+  /* #top-bar y la tira de dispositivos ocupaban dos filas apiladas —
+     acá arriba se oculta el topbar de desktop entero y se arma una sola
+     fila dentro de #device-list: marca + tira scrolleable + íconos */
+  #top-bar { display: none; }
+
   #device-list {
     border-right: none;
     border-bottom: 1px solid #1f242b;
-    padding: 12px;
+    padding: 0;
     min-width: 0;
   }
 
-  #devices { flex-direction: row; overflow-x: auto; padding-bottom: 2px; min-width: 0; }
-  #devices li { flex-shrink: 0; flex-direction: row; align-items: center; }
+  #mobile-topbar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-bottom: 1px solid #1f242b;
+  }
+
+  .mobile-only { display: flex; flex-shrink: 0; }
+  .mobile-only.top-bar-actions { gap: 6px; }
+  #mobile-topbar-row .top-icon-btn {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  #mobile-topbar-row .top-icon-btn .btn-label { display: none; }
+  #mobile-topbar-row .top-bar-brand { font-size: 18px; }
+
+  .sidebar-top-actions { display: none; }
+
+  #devices {
+    flex: 1;
+    min-width: 0;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  #devices::-webkit-scrollbar { display: none; }
+
+  /* En la tira horizontal, avatar más chico y todo en un pill compacto */
+  #devices li {
+    flex-shrink: 0;
+    padding: 3px 10px 3px 3px;
+    border-radius: 16px;
+    background: #171c23;
+    border: 1px solid #1f242b;
+    font-size: 12px;
+  }
+  #devices li.active { border-color: #2f6fed; background: #1a1f26; }
+  #devices li.active .device-avatar { box-shadow: none; }
+
+  .device-avatar-wrap, .device-avatar { width: 26px; height: 26px; }
+  .device-avatar { font-size: 11px; }
+  .device-presence { width: 8px; height: 8px; border-width: 1.5px; }
 
   #contacts-panel { padding: 14px; gap: 14px; min-width: 0; }
 
@@ -251,7 +357,6 @@ button {
 }
 
 @media (max-width: 480px) {
-  #top-bar { padding: 0 10px; }
   .top-bar-brand { font-size: 12px; }
   #contacts-panel { padding: 10px; }
 }

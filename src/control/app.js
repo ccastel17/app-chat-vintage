@@ -2,7 +2,7 @@
 import { supabase, DEVICES_PRESENCE_CHANNEL, notificationsChannelName } from "../shared/supabaseClient.js";
 import { applySkinVars } from "../shared/skin.js";
 import { isOutgoing } from "../shared/conversation.js";
-import { uploadChatImage } from "../shared/uploadImage.js";
+import { uploadChatImage, uploadHomeScreenBackground } from "../shared/uploadImage.js";
 
 const devicesEl = document.getElementById("devices");
 const activeRoomLabel = document.getElementById("active-room-label");
@@ -11,17 +11,19 @@ const conversationSelect = document.getElementById("conversation-select");
 const linkedHintEl = document.getElementById("linked-hint");
 const roomMessagesEl = document.getElementById("room-messages");
 const composerEl = document.getElementById("composer");
-const quickActionsEl = document.getElementById("quick-actions");
 const messageInput = document.getElementById("message-input");
 const sendBtn = document.getElementById("send-btn");
 const imageInput = document.getElementById("image-input");
 const attachBtn = document.getElementById("attach-btn");
+const voiceNoteBtn = document.getElementById("voice-note-btn");
+const quickNotifyVoiceBtn = document.getElementById("quick-notify-voice-btn");
 const directionBtn = document.getElementById("direction-btn");
 const linkedHintOtherNameEl = document.getElementById("linked-hint-other-name");
 const notifyHintEl = document.getElementById("notify-hint");
 const typingBtn = document.getElementById("typing-btn");
 const seenBtn = document.getElementById("seen-btn");
 const callBtn = document.getElementById("call-btn");
+const videoCallBtn = document.getElementById("video-call-btn");
 const clearChatBtn = document.getElementById("clear-chat-btn");
 const quickNotifyEl = document.getElementById("quick-notify");
 const quickNotifyToggleBtn = document.getElementById("quick-notify-toggle-btn");
@@ -43,8 +45,30 @@ const saveRoomSettingsBtn = document.getElementById("save-room-settings-btn");
 const deleteRoomBtn = document.getElementById("delete-room-btn");
 const showEmergencyBtn = document.getElementById("show-emergency-btn");
 const hideEmergencyBtn = document.getElementById("hide-emergency-btn");
+const alarmBtn = document.getElementById("alarm-btn");
+const alarmPanelEl = document.getElementById("alarm-panel");
+const alarmTimeInput = document.getElementById("alarm-time-input");
+const alarmActivateBtn = document.getElementById("alarm-activate-btn");
+const alarmDeactivateBtn = document.getElementById("alarm-deactivate-btn");
+const homeScreenBtn = document.getElementById("home-screen-btn");
+const homeScreenPanelEl = document.getElementById("home-screen-panel");
+const homeScreenBgPreviewEl = document.getElementById("home-screen-bg-preview");
+const homeScreenBgFile = document.getElementById("home-screen-bg-file");
+const homeScreenTimeInput = document.getElementById("home-screen-time-input");
+const homeScreenDateInput = document.getElementById("home-screen-date-input");
+const homeScreenActivateBtn = document.getElementById("home-screen-activate-btn");
+const homeScreenDeactivateBtn = document.getElementById("home-screen-deactivate-btn");
+const homeScreenHelpBtn = document.getElementById("home-screen-help-btn");
+const homeScreenHelpModalEl = document.getElementById("home-screen-help-modal");
+const closeHomeScreenHelpBtn = document.getElementById("close-home-screen-help-btn");
+
+const emptyStateEl = document.getElementById("empty-state");
+const actionsColEl = document.getElementById("actions-col");
+const viewChatActionEl = document.getElementById("view-chat-action");
+const editContactsActionEl = document.getElementById("edit-contacts-action");
 
 const openSkinModalBtn = document.getElementById("open-skin-modal-btn");
+const openSkinModalBtnMobile = document.getElementById("open-skin-modal-btn-mobile");
 const closeSkinModalBtn = document.getElementById("close-skin-modal-btn");
 const skinModalEl = document.getElementById("skin-modal");
 const activeSkinHintEl = document.getElementById("active-skin-hint");
@@ -71,6 +95,10 @@ let activeThreadChannel = null;
 let activeNotificationChannel = null;
 let typingActive = false;
 let emergencyScreenVisible = false;
+let alarmPanelExpanded = false;
+let alarmScreenVisible = false;
+let homeScreenPanelExpanded = false;
+let homeScreenVisible = false;
 
 const rooms = new Map(); // room_id -> { room_id, label }
 const onlineRoomIds = new Set();
@@ -86,19 +114,29 @@ async function deleteMessage(id) {
   if (error) console.error("Error borrando mensaje:", error);
 }
 
-function renderMessage(conversation, { id, content, image_url, direction, sender_room_id, injected_by_director, created_at }) {
+function formatVoiceDuration(seconds) {
+  const s = Math.max(0, seconds || 0);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function renderMessage(conversation, { id, content, image_url, direction, sender_room_id, injected_by_director, is_voice, voice_duration, created_at }) {
   const outgoing = isOutgoing(conversation, { direction, sender_room_id }, conversation.room_id);
   const msg = document.createElement("div");
   msg.className = `msg ${outgoing ? "outgoing" : "incoming"} ${injected_by_director ? "injected" : ""}`.trim();
   msg.dataset.id = id;
   msg.innerHTML = `
     ${image_url ? '<img class="msg-image" alt="Foto" />' : ""}
-    ${content ? '<span class="msg-text"></span>' : ""}
+    ${is_voice || content ? '<span class="msg-text"></span>' : ""}
     <span class="msg-meta"></span>
     <button type="button" class="msg-delete-btn" title="Eliminar mensaje">✕</button>
   `;
   if (image_url) msg.querySelector(".msg-image").src = image_url;
-  if (content) msg.querySelector(".msg-text").textContent = content;
+  if (is_voice) {
+    msg.querySelector(".msg-text").textContent = `🎙️ Nota de voz · ${formatVoiceDuration(voice_duration)}`;
+    msg.classList.add("msg-voice");
+  } else if (content) {
+    msg.querySelector(".msg-text").textContent = content;
+  }
   const time = new Date(created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   msg.querySelector(".msg-meta").textContent = injected_by_director ? `🎬 ${time}` : time;
   if (injected_by_director) msg.title = "Escrito por el director en nombre del actor";
@@ -109,6 +147,17 @@ function renderMessage(conversation, { id, content, image_url, direction, sender
 
 function initials(name) {
   return (name || "?").trim().charAt(0).toUpperCase();
+}
+
+// Empty state (sin dispositivo elegido) vs. columna de acciones + composer.
+// El nivel de detalle más fino (conversación elegida o no, linked o no)
+// lo sigue resolviendo applyConversationModeUI, que corre después de esto
+// en el mismo flujo de setActiveRoom.
+function updateEmptyState(hasRoom) {
+  emptyStateEl.classList.toggle("hidden", hasRoom);
+  actionsColEl.classList.toggle("hidden", !hasRoom);
+  roomMessagesEl.classList.toggle("hidden", !hasRoom);
+  if (!hasRoom) composerEl.classList.add("hidden");
 }
 
 // Colapsado por default al cambiar de dispositivo — es edición de setup
@@ -155,6 +204,42 @@ editRoomAvatarFile.addEventListener("change", async () => {
   });
   if (error) console.error("Error guardando avatar:", error);
   editRoomAvatarFile.value = "";
+});
+
+// El fondo de la pantalla de inicio se persiste en rooms.home_screen_bg_url
+// (como el avatar) para no tener que resubirlo cada vez que se activa
+function fillHomeScreenPanel(roomId) {
+  const room = rooms.get(roomId);
+  homeScreenBgPreviewEl.style.backgroundImage = room?.home_screen_bg_url
+    ? `url("${room.home_screen_bg_url}")`
+    : "none";
+}
+
+homeScreenBgFile.addEventListener("change", async () => {
+  const file = homeScreenBgFile.files[0];
+  if (!file || !activeRoomId) return;
+  let publicUrl;
+  try {
+    publicUrl = await uploadHomeScreenBackground(supabase, activeRoomId, file);
+  } catch (error) {
+    console.error("Error subiendo fondo de pantalla de inicio:", error);
+    return;
+  }
+  // label va sí o sí en el upsert aunque no cambie: Postgres valida las
+  // columnas NOT NULL del INSERT antes de resolver el ON CONFLICT, así
+  // que omitirla revienta incluso en una fila que ya existe (mismo caso
+  // que editRoomAvatarFile más arriba)
+  const room = rooms.get(activeRoomId);
+  const { error } = await supabase
+    .from("rooms")
+    .upsert({ room_id: activeRoomId, label: room?.label || activeRoomId, home_screen_bg_url: publicUrl });
+  if (error) {
+    console.error("Error guardando fondo de pantalla de inicio:", error);
+    return;
+  }
+  if (room) room.home_screen_bg_url = publicUrl;
+  homeScreenBgPreviewEl.style.backgroundImage = `url("${publicUrl}")`;
+  homeScreenBgFile.value = "";
 });
 
 function updateDirectionBtn() {
@@ -329,15 +414,48 @@ async function setActiveRoom(roomId) {
   toggleRoomSettingsBtn.classList.remove("hidden");
   collapseRoomSettings();
   fillRoomSettings(roomId);
+  updateEmptyState(true);
+  viewChatActionEl.href = `/device/${roomId}`;
+  editContactsActionEl.href = `/control/contacts?room=${encodeURIComponent(roomId)}`;
   emergencyScreenVisible = false;
   updateEmergencyButtons();
+  alarmPanelExpanded = false;
+  alarmScreenVisible = false;
+  updateAlarmPanel();
+  homeScreenPanelExpanded = false;
+  homeScreenVisible = false;
+  fillHomeScreenPanel(roomId);
+  updateHomeScreenPanel();
   renderDeviceList();
 
   await loadConversationsForRoom(roomId);
 
   activeNotificationChannel?.unsubscribe();
-  activeNotificationChannel = supabase.channel(notificationsChannelName(roomId));
-  activeNotificationChannel.subscribe();
+  activeNotificationChannel = supabase
+    .channel(notificationsChannelName(roomId))
+    // El actor puede cerrar la alarma él mismo (a diferencia de la de
+    // apagado/SOS) — si lo hace antes de que el director la cierre acá,
+    // este evento nos avisa para que el tile vuelva a su estado inicial
+    .on("broadcast", { event: "alarm_screen_hide" }, () => {
+      alarmScreenVisible = false;
+      updateAlarmPanel();
+    })
+    // Misma razón: el actor cierra la pantalla de inicio con un swipe
+    .on("broadcast", { event: "home_screen_hide" }, () => {
+      homeScreenVisible = false;
+      updateHomeScreenPanel();
+    })
+    // El actor también puede REVELAR la pantalla de inicio por su cuenta
+    // (al apagar/posponer la alarma, ver device/app.js dismissAlarm) sin
+    // que el director la haya activado — este evento sincroniza el tile
+    // para que muestre "Cerrar pantalla" y no quede desfasado
+    .on("broadcast", { event: "home_screen_show" }, ({ payload }) => {
+      homeScreenVisible = true;
+      if (payload?.time) homeScreenTimeInput.value = payload.time;
+      if (payload?.date) homeScreenDateInput.value = payload.date;
+      updateHomeScreenPanel();
+    })
+    .subscribe();
 
   conversationsChannel?.unsubscribe();
   conversationsChannel = supabase
@@ -372,6 +490,7 @@ function renderDeviceList() {
   [...allRoomIds]
     .sort((a, b) => a.localeCompare(b))
     .forEach((roomId) => {
+      const room = rooms.get(roomId);
       const li = document.createElement("li");
       li.dataset.roomId = roomId;
       li.className = [
@@ -379,26 +498,21 @@ function renderDeviceList() {
         onlineRoomIds.has(roomId) ? "online" : "",
       ].join(" ").trim();
       li.innerHTML = `
-        <span class="device-row-top">
-          <span class="online-dot"></span>
-          <span class="device-label"></span>
+        <span class="device-avatar-wrap">
+          <span class="device-avatar"></span>
+          <span class="device-presence"></span>
         </span>
-        <span class="device-row-actions">
-          <a class="device-action-link view-chat-link" target="_blank" rel="noopener" title="Ver chat">
-            <span class="action-icon">💬</span><span class="action-label">Ver chat</span>
-          </a>
-          <a class="device-action-link edit-list-link" target="_blank" rel="noopener" title="Editar lista">
-            <span class="action-icon">📝</span><span class="action-label">Editar lista</span>
-          </a>
-        </span>
+        <span class="device-label"></span>
       `;
-      li.querySelector(".device-label").textContent = rooms.get(roomId)?.label || roomId;
-      const viewChatLink = li.querySelector(".view-chat-link");
-      viewChatLink.href = `/device/${roomId}`;
-      viewChatLink.addEventListener("click", (e) => e.stopPropagation());
-      const editListLink = li.querySelector(".edit-list-link");
-      editListLink.href = `/control/contacts?room=${encodeURIComponent(roomId)}`;
-      editListLink.addEventListener("click", (e) => e.stopPropagation());
+      const avatarEl = li.querySelector(".device-avatar");
+      if (room?.avatar_url) {
+        avatarEl.style.backgroundImage = `url("${room.avatar_url}")`;
+        avatarEl.textContent = "";
+      } else {
+        avatarEl.style.backgroundImage = "none";
+        avatarEl.textContent = initials(room?.label || roomId);
+      }
+      li.querySelector(".device-label").textContent = room?.label || roomId;
       li.addEventListener("click", () => setActiveRoom(roomId));
       devicesEl.appendChild(li);
     });
@@ -523,8 +637,15 @@ deleteRoomBtn.addEventListener("click", async () => {
   activeRoomLabel.textContent = "Selecciona un dispositivo";
   toggleRoomSettingsBtn.classList.add("hidden");
   collapseRoomSettings();
+  updateEmptyState(false);
   emergencyScreenVisible = false;
   updateEmergencyButtons();
+  alarmPanelExpanded = false;
+  alarmScreenVisible = false;
+  updateAlarmPanel();
+  homeScreenPanelExpanded = false;
+  homeScreenVisible = false;
+  updateHomeScreenPanel();
   speakerControlEl.classList.add("hidden");
   quickNotifyToggleBtn.classList.add("hidden");
   quickNotifyEl.classList.add("hidden");
@@ -561,7 +682,7 @@ function isIncomingToActor(conversation) {
   return conversation.kind === "linked" || direction === "incoming";
 }
 
-function broadcastNewMessageNotification(conversation, { content, image_url }) {
+function broadcastNewMessageNotification(conversation, { content, image_url, is_voice }) {
   activeNotificationChannel?.send({
     type: "broadcast",
     event: "new_message",
@@ -569,10 +690,34 @@ function broadcastNewMessageNotification(conversation, { content, image_url }) {
       conversationId: conversation.id,
       contactName: conversation.contact_name,
       avatarUrl: conversation.avatar_url,
-      content: content || (image_url ? "📷 Foto" : ""),
+      content: is_voice ? "🎙️ Audio" : content || (image_url ? "📷 Foto" : ""),
     },
   });
 }
+
+// Nota de voz simulada: sin audio real (ver criterio del proyecto para
+// todos los overlays — puramente visual), content queda vacío y se
+// distingue con is_voice + una duración inventada, así la burbuja se ve
+// como un mensaje de voz real en /device/chat
+function randomVoiceDuration() {
+  return Math.floor(Math.random() * 39) + 4; // 4–42s, un rango creíble
+}
+
+async function sendVoiceNote() {
+  const conversation = activeConversation();
+  if (!conversation) return;
+  const { error } = await supabase
+    .from("messages")
+    .insert(messagePayloadFor(conversation, { content: "", is_voice: true, voice_duration: randomVoiceDuration() }));
+  if (error) {
+    console.error("Error enviando nota de voz:", error);
+    return;
+  }
+  setTypingBroadcast(false);
+  if (isIncomingToActor(conversation)) broadcastNewMessageNotification(conversation, { is_voice: true });
+}
+
+voiceNoteBtn.addEventListener("click", sendVoiceNote);
 
 // Notificación "de otro contacto" del mismo dispositivo: independiente de
 // la conversación activa (no la toca, no la muestra) — siempre entrante,
@@ -606,6 +751,28 @@ quickNotifyInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendQuickNotification();
 });
 
+async function sendQuickVoiceNotification() {
+  const target = conversations.get(quickNotifySelect.value);
+  if (!target) return;
+
+  const payload = { thread_id: target.thread_id, content: "", is_voice: true, voice_duration: randomVoiceDuration() };
+  if (target.kind === "linked") {
+    payload.sender_room_id = target.linked_room_id;
+    payload.injected_by_director = true;
+  } else {
+    payload.direction = "incoming";
+  }
+
+  const { error } = await supabase.from("messages").insert(payload);
+  if (error) {
+    console.error("Error enviando nota de voz de otro contacto:", error);
+    return;
+  }
+  broadcastNewMessageNotification(target, { is_voice: true });
+}
+
+quickNotifyVoiceBtn.addEventListener("click", sendQuickVoiceNotification);
+
 // Pantalla de apagado/SOS: a nivel dispositivo (no de conversación), se ve
 // sin importar qué esté mirando el actor — mismo canal que las
 // notificaciones, solo visual, el director la cierra remotamente
@@ -624,6 +791,94 @@ hideEmergencyBtn.addEventListener("click", () => {
   activeNotificationChannel?.send({ type: "broadcast", event: "emergency_screen_hide", payload: {} });
   emergencyScreenVisible = false;
   updateEmergencyButtons();
+});
+
+// Pantalla de alarma: a diferencia de la de apagado/SOS, el actor SÍ
+// puede cerrarla él mismo tocando "Detener"/"Posponer" (ver device/app.js
+// y device/chat/app.js) — por eso el panel también escucha el evento de
+// cierre en vez de asumir que solo el director lo dispara (ver el
+// listener agregado en setActiveRoom). El tile "⏰ Simular despertador"
+// abre/cierra este panel; adentro, el director elige la hora y confirma.
+function updateAlarmPanel() {
+  alarmPanelEl.classList.toggle("hidden", !alarmPanelExpanded);
+  alarmBtn.classList.toggle("active", alarmPanelExpanded || alarmScreenVisible);
+  alarmActivateBtn.classList.toggle("hidden", alarmScreenVisible);
+  alarmDeactivateBtn.classList.toggle("hidden", !alarmScreenVisible);
+}
+
+alarmBtn.addEventListener("click", () => {
+  alarmPanelExpanded = !alarmPanelExpanded;
+  if (alarmPanelExpanded && !alarmTimeInput.value) {
+    // Precarga la hora actual como punto de partida cómodo — el
+    // director la puede cambiar antes de activar
+    const now = new Date();
+    alarmTimeInput.value = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  }
+  updateAlarmPanel();
+});
+
+alarmActivateBtn.addEventListener("click", () => {
+  const time = alarmTimeInput.value || "07:30";
+  activeNotificationChannel?.send({ type: "broadcast", event: "alarm_screen_show", payload: { time } });
+  alarmScreenVisible = true;
+  updateAlarmPanel();
+});
+
+alarmDeactivateBtn.addEventListener("click", () => {
+  activeNotificationChannel?.send({ type: "broadcast", event: "alarm_screen_hide", payload: {} });
+  alarmScreenVisible = false;
+  updateAlarmPanel();
+});
+
+// Pantalla de inicio simulada: mismo patrón que la alarma (panel
+// colapsable, hora en texto libre) pero suma el fondo (persistido en
+// rooms, ver fillHomeScreenPanel/homeScreenBgFile más arriba) y una fecha
+// también en texto libre — no hay formateador automático a propósito,
+// así el director controla exactamente qué se ve, sin depender de que el
+// formato de fecha calculado coincida con lo que pide la escena
+function updateHomeScreenPanel() {
+  homeScreenPanelEl.classList.toggle("hidden", !homeScreenPanelExpanded);
+  homeScreenBtn.classList.toggle("active", homeScreenPanelExpanded || homeScreenVisible);
+  homeScreenActivateBtn.classList.toggle("hidden", homeScreenVisible);
+  homeScreenDeactivateBtn.classList.toggle("hidden", !homeScreenVisible);
+}
+
+function defaultHomeScreenDate() {
+  const formatted = new Date().toLocaleDateString("es-ES", { weekday: "short", month: "short", day: "numeric" });
+  return formatted.replace(",", "").replace(/^\p{L}/u, (c) => c.toUpperCase());
+}
+
+homeScreenBtn.addEventListener("click", () => {
+  homeScreenPanelExpanded = !homeScreenPanelExpanded;
+  if (homeScreenPanelExpanded) {
+    if (!homeScreenTimeInput.value) {
+      const now = new Date();
+      homeScreenTimeInput.value = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    }
+    if (!homeScreenDateInput.value) homeScreenDateInput.value = defaultHomeScreenDate();
+  }
+  updateHomeScreenPanel();
+});
+
+homeScreenActivateBtn.addEventListener("click", () => {
+  const room = activeRoomId ? rooms.get(activeRoomId) : null;
+  activeNotificationChannel?.send({
+    type: "broadcast",
+    event: "home_screen_show",
+    payload: {
+      backgroundUrl: room?.home_screen_bg_url || null,
+      time: homeScreenTimeInput.value || "",
+      date: homeScreenDateInput.value || "",
+    },
+  });
+  homeScreenVisible = true;
+  updateHomeScreenPanel();
+});
+
+homeScreenDeactivateBtn.addEventListener("click", () => {
+  activeNotificationChannel?.send({ type: "broadcast", event: "home_screen_hide", payload: {} });
+  homeScreenVisible = false;
+  updateHomeScreenPanel();
 });
 
 sendBtn.addEventListener("click", async () => {
@@ -711,13 +966,33 @@ clearChatBtn.addEventListener("click", async () => {
   if (error) console.error("Error vaciando el chat:", error);
 });
 
+// Va por el canal del dispositivo (no del thread) para que interrumpa
+// sin importar qué esté mirando el actor — la lista, este chat, o
+// cualquier otro — igual que una llamada real. El nombre y la foto van
+// en el payload (no se infieren del lado del actor) porque puede estar
+// mirando una conversación distinta a la que está "llamando".
 callBtn.addEventListener("click", () => {
   const conversation = activeConversation();
   if (!conversation) return;
-  activeThreadChannel?.send({
+  activeNotificationChannel?.send({
     type: "broadcast",
     event: "incoming_call",
-    payload: { callerName: conversation.contact_name },
+    payload: { callerName: conversation.contact_name, avatarUrl: conversation.avatar_url },
+  });
+});
+
+// Videollamada: mismo timbre que la de audio, pero al aceptar el actor
+// pasa a una pantalla verde con marcadores de tracking en vez de cerrar
+// el overlay — pensada para compositar video real encima en post. Fire-
+// and-forget como la de audio: no hay botón de "cortar" acá en /control,
+// el actor cuelga desde su propia pantalla (ver src/shared/callOverlay.js)
+videoCallBtn.addEventListener("click", () => {
+  const conversation = activeConversation();
+  if (!conversation) return;
+  activeNotificationChannel?.send({
+    type: "broadcast",
+    event: "incoming_call",
+    payload: { callerName: conversation.contact_name, avatarUrl: conversation.avatar_url, isVideo: true },
   });
 });
 
@@ -802,14 +1077,25 @@ function selectSkinForEditing(skinId) {
   deleteSkinBtn.disabled = skinId === activeSkinId;
 }
 
-openSkinModalBtn.addEventListener("click", async () => {
+async function openSkinModal() {
   skinModalEl.classList.remove("hidden");
   await loadSkins();
   await loadActiveSkinId();
   selectSkinForEditing(activeSkinId || [...skins.keys()][0]);
-});
+}
+
+openSkinModalBtn.addEventListener("click", openSkinModal);
+openSkinModalBtnMobile.addEventListener("click", openSkinModal);
 
 closeSkinModalBtn.addEventListener("click", () => skinModalEl.classList.add("hidden"));
+
+// Manual de "hora falsa en el iPhone" — antes un link a un Artifact
+// externo, ahora el mismo texto en un modal acá adentro
+homeScreenHelpBtn.addEventListener("click", () => homeScreenHelpModalEl.classList.remove("hidden"));
+closeHomeScreenHelpBtn.addEventListener("click", () => homeScreenHelpModalEl.classList.add("hidden"));
+homeScreenHelpModalEl.addEventListener("click", (e) => {
+  if (e.target === homeScreenHelpModalEl) homeScreenHelpModalEl.classList.add("hidden");
+});
 
 skinSelect.addEventListener("change", () => selectSkinForEditing(skinSelect.value));
 

@@ -18,16 +18,29 @@ body {
 
 .top-bar-brand { font-size: 13px; font-weight: 700; color: #e9edf1; }
 
-.top-bar-home {
+.top-bar-actions { display: flex; align-items: center; gap: 8px; }
+
+.top-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12.5px;
+  font-weight: 600;
   color: #9aa4af;
   text-decoration: none;
   background: #1a1f26;
+  border: none;
   padding: 6px 12px;
   border-radius: 6px;
+  cursor: pointer;
 }
 
-.top-bar-home:hover { background: #263041; color: #e9edf1; }
+.top-icon-btn:hover { background: #263041; color: #e9edf1; }
+
+/* En la fila unificada de tablet, los botones del topbar quedan solo con
+   ícono (ver breakpoint más abajo) — acá dejamos el label listo para
+   ocultarse ahí sin tocar el markup */
+.btn-label { white-space: nowrap; }
 
 #control-root {
   display: grid;
@@ -39,13 +52,35 @@ body {
   background: #0b0f14;
   padding: 16px;
   border-right: 1px solid #1f242b;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-#device-list h2 { font-size: 14px; margin-bottom: 12px; color: #9aa4af; }
+/* Wrapper alrededor de #devices — en desktop es transparente (los
+   elementos .mobile-only ni se muestran); en tablet se convierte en la
+   fila única que reemplaza a #top-bar + tira de dispositivos */
+#mobile-topbar-row { display: contents; }
+.mobile-only { display: none; }
 
 #devices { list-style: none; display: flex; flex-direction: column; gap: 4px; }
 
-#control-panel { padding: 24px; display: flex; flex-direction: column; gap: 14px; height: 100%; min-height: 0; }
+#control-panel {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  min-height: 0;
+}
+
+#chat-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px;
+  min-height: 0;
+}
 
 #room-header { display: flex; align-items: center; gap: 10px; }
 
@@ -59,6 +94,55 @@ body {
 #toggle-room-settings-btn.hidden { display: none; }
 #toggle-room-settings-btn.active { background: #2f6fed; }
 
+/* ---------- empty state: sin dispositivo seleccionado ---------- */
+#empty-state {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+}
+
+#empty-state.hidden { display: none; }
+
+#empty-state svg { width: 120px; height: 120px; margin-bottom: 20px; flex-shrink: 0; }
+#empty-state h3 { font-size: 19px; margin: 0 0 8px; }
+#empty-state .empty-sub { color: #7d8792; font-size: 13.5px; line-height: 1.55; max-width: 380px; margin: 0 0 26px; }
+
+.empty-steps { display: flex; flex-direction: column; gap: 10px; text-align: left; width: 100%; max-width: 380px; }
+
+.empty-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #171c23;
+  border: 1px solid #1f242b;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.empty-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #1f242b;
+  border: 1px solid #2a3038;
+  color: #7d8792;
+  font-size: 11.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.empty-step-txt { font-size: 13px; display: flex; flex-direction: column; }
+.empty-step-txt b { font-size: 13.5px; margin-bottom: 1px; }
+.empty-step-txt span { color: #7d8792; font-size: 12px; }
+
 #room-messages {
   flex: 1;
   min-height: 0;
@@ -71,6 +155,8 @@ body {
   border-radius: 8px;
   border: 1px solid #1f242b;
 }
+
+#room-messages.hidden { display: none; }
 
 #room-messages .empty { color: #7d8792; font-size: 13px; }
 #room-messages .empty a { color: #2f6fed; }
@@ -90,6 +176,7 @@ body {
 /* Mensaje que el director mandó en nombre de un actor en una linkeada —
    marca visible solo acá, invisible para los actores */
 #room-messages .msg.injected { outline: 1px dashed #c9a35c; outline-offset: -1px; }
+#room-messages .msg.msg-voice .msg-text { font-style: italic; opacity: 0.85; }
 
 .msg-delete-btn {
   position: absolute;
@@ -141,6 +228,19 @@ body {
 
 #attach-btn:hover { background: #263041; }
 
+#voice-note-btn,
+#quick-notify-voice-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: #1f242b;
+  font-size: 16px;
+  flex-shrink: 0;
+  padding: 0;
+}
+#voice-note-btn:hover,
+#quick-notify-voice-btn:hover { background: #263041; }
+
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 #message-input {
@@ -162,21 +262,78 @@ button {
   font-size: 14px;
 }
 
-#quick-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-#quick-actions button.hidden { display: none; }
-
-#quick-actions button { background: #1f242b; }
-
-#quick-actions button.active { background: #2f6fed; }
-
 .danger-btn { background: #3a1f1f; color: #ff9b96; }
 
-#show-emergency-btn { background: #ff3b30; color: #fff; font-weight: 600; }
+/* ---------- columna de acciones: grilla de tiles, siempre visible ---------- */
+#actions-col {
+  width: 300px;
+  flex-shrink: 0;
+  border-left: 1px solid #1f242b;
+  padding: 18px 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  /* sin barra visible: en touch se scrollea con drag/swipe, en desktop
+     con rueda/trackpad — ninguno de los dos necesita el track del navegador */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+#actions-col::-webkit-scrollbar { display: none; }
 
-#quick-notify-toggle-btn.active { background: #c9a35c; color: #1a1710; font-weight: 600; }
+#actions-col.hidden { display: none; }
+
+#actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  border-radius: 14px;
+  padding: 12px 6px;
+  min-height: 82px;
+  border: 1px solid #1f242b;
+  background: #171c23;
+  color: #e9edf1;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tile .tile-icon { font-size: 19px; line-height: 1; }
+.tile .tile-label { font-size: 11.5px; font-weight: 600; line-height: 1.25; }
+
+.tile.hidden { display: none; }
+.tile:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* familias de color desaturadas — sustituyen a los títulos de sección que
+   tenía la lista anterior, sin ocupar una línea de texto aparte */
+.tile.fam-blue { background: rgba(90,133,209,0.14); border-color: rgba(120,155,224,0.38); }
+.tile.fam-blue .tile-label { color: #b9c9ec; }
+.tile.fam-violet { background: rgba(163,124,199,0.15); border-color: rgba(180,148,212,0.4); }
+.tile.fam-violet .tile-label { color: #d6c3e8; }
+.tile.fam-amber { background: rgba(196,153,86,0.16); border-color: rgba(212,175,120,0.42); }
+.tile.fam-amber .tile-label { color: #e6d0a3; }
+.tile.fam-red { background: rgba(197,90,79,0.15); border-color: rgba(224,120,108,0.42); }
+.tile.fam-red .tile-label { color: #eba299; }
+.tile.fam-neutral .tile-label { color: #9aa4af; }
+
+/* estado "prendido" (ej. typing-btn mientras simula tipeo) — anillo azul
+   genérico; fam-amber pisa esto con su propio realce más abajo por ser
+   más específico */
+.tile.active { border-color: #2f6fed; box-shadow: 0 0 0 2px rgba(47,111,237,0.35); }
+.tile.fam-amber.active { background: rgba(196,153,86,0.32); border-color: #c9a35c; box-shadow: none; }
 
 #quick-notify {
+  /* ocupa la fila entera de #actions-grid, pegado a su tile — no un
+     bloque suelto al final de toda la columna */
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -210,72 +367,267 @@ button {
 
 #quick-notify-send-btn { background: #c9a35c; color: #1a1710; font-weight: 600; }
 
-#direction-btn { background: #1f242b; white-space: nowrap; }
-#direction-btn.hidden { display: none; }
+#alarm-panel {
+  /* misma razón que #quick-notify: pegado a su tile, no al final */
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  background: rgba(163, 124, 199, 0.12);
+  border: 1px solid rgba(180, 148, 212, 0.35);
+  border-radius: 10px;
+}
 
-#devices li {
-  padding: 8px 10px;
-  border-radius: 6px;
-  cursor: pointer;
+#alarm-panel.hidden { display: none; }
+
+#alarm-time-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #d6c3e8;
+}
+
+#alarm-time-input {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(180, 148, 212, 0.35);
+  background: #1a1f26;
+  color: #e9edf1;
   font-size: 13px;
 }
 
-#devices li:hover { background: #1a1f26; }
+#alarm-activate-btn { background: #a37cc7; color: #1a1024; font-weight: 600; }
 
-#devices li.active { background: #2f6fed; color: white; }
+/* .tile.hidden ya cubre al tile "⏰ Simular despertador" de arriba, pero
+   estos dos son botones normales dentro del panel — no heredan esa regla */
+#alarm-activate-btn.hidden,
+#alarm-deactivate-btn.hidden { display: none; }
 
-#devices li.empty { color: #7d8792; cursor: default; }
-#devices li.empty:hover { background: none; }
+/* mismo criterio que #alarm-panel — familia violeta, pegado a su tile */
+#home-screen-panel {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  background: rgba(163, 124, 199, 0.12);
+  border: 1px solid rgba(180, 148, 212, 0.35);
+  border-radius: 10px;
+}
 
-/* Nombre arriba, acciones abajo — un solo renglón no entra cómodo en los
-   240px fijos de la sidebar con dos botones con label */
-#devices li {
+#home-screen-panel.hidden { display: none; }
+
+.home-screen-bg-preview {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #1a1f26 center / cover no-repeat;
+  border: 1px solid rgba(180, 148, 212, 0.35);
+  flex-shrink: 0;
+}
+
+.home-screen-upload-label {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
+  gap: 4px;
+  font-size: 11px;
+  color: #d6c3e8;
+  max-width: 150px;
+}
+.home-screen-upload-label input { font-size: 11.5px; min-width: 0 !important; }
+
+#home-screen-time-label,
+#home-screen-date-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #d6c3e8;
 }
 
-.device-row-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.device-row-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+#home-screen-time-input,
+#home-screen-date-input {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(180, 148, 212, 0.35);
+  background: #1a1f26;
+  color: #e9edf1;
+  font-size: 13px;
+}
 
-#devices .online-dot {
-  width: 7px;
-  height: 7px;
+#home-screen-date-input { width: 130px; }
+
+#home-screen-activate-btn { background: #a37cc7; color: #1a1024; font-weight: 600; }
+
+#home-screen-activate-btn.hidden,
+#home-screen-deactivate-btn.hidden { display: none; }
+
+#home-screen-help-btn {
+  font-size: 11.5px;
+  color: #d6c3e8;
+  text-decoration: underline;
+  flex-basis: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+#home-screen-help-btn:hover { color: #e9edf1; }
+
+/* ---------- modal "hora falsa en el iPhone" ---------- */
+#home-screen-help-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  padding: 24px;
+}
+
+#home-screen-help-modal.hidden { display: none; }
+
+#home-screen-help-content {
+  background: #1c1712;
+  border: 1px solid #3a2f1e;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 20px 24px 24px;
+  color: #f2e9d8;
+}
+
+.help-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.help-modal-header h2 { font-size: 17px; margin: 0; flex: 1; color: #f2e9d8; }
+.help-modal-header button { background: #2b2318; padding: 6px 10px; font-size: 13px; color: #f2e9d8; }
+
+.help-sub { font-size: 13px; color: #a99a7f; margin: 0 0 20px; }
+
+.help-steps { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+
+.help-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: #221b12;
+  border: 1px solid #3a2f1e;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.help-step-num {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #a37cc7;
+  color: #1a1024;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.help-step h3 { margin: 0 0 3px; font-size: 13.5px; color: #f2e9d8; }
+.help-step p { margin: 0; font-size: 12.5px; color: #a99a7f; }
+.help-step code {
+  background: #1c1712;
+  border: 1px solid #3a2f1e;
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-size: 11.5px;
+  color: #f2e9d8;
+  font-family: ui-monospace, monospace;
+}
+
+.help-box { border-radius: 10px; padding: 13px 15px; margin-bottom: 14px; font-size: 12.5px; }
+.help-box h4 { margin: 0 0 7px; font-size: 12.5px; }
+.help-box p { margin: 0 0 7px; }
+.help-box p:last-child { margin-bottom: 0; }
+.help-box ul { margin: 5px 0 0; padding-left: 16px; }
+.help-box li { margin-bottom: 3px; }
+
+.help-box.warn { background: rgba(196, 153, 86, 0.14); border: 1px solid rgba(212, 175, 120, 0.35); }
+.help-box.warn h4 { color: #e6d0a3; }
+
+.help-box.danger { background: rgba(197, 90, 79, 0.14); border: 1px solid rgba(224, 120, 108, 0.35); }
+.help-box.danger h4, .help-box.danger p { color: #eba299; }
+
+.help-box.after { background: #221b12; border: 1px dashed #3a2f1e; }
+.help-box.after h4 { color: #f2e9d8; }
+.help-box.after p { color: #a99a7f; }
+
+.help-footnote { font-size: 12px; color: #a99a7f; border-top: 1px solid #3a2f1e; padding-top: 14px; margin: 4px 0 0; }
+.help-footnote strong { color: #f2e9d8; }
+
+#direction-btn { background: #1f242b; white-space: nowrap; }
+#direction-btn.hidden { display: none; }
+
+/* ---------- lista de dispositivos: avatar + nombre ---------- */
+#devices li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#devices li:hover { background: #1a1f26; }
+#devices li.active { background: #171c23; }
+
+#devices li.empty { color: #7d8792; cursor: default; font-weight: 400; font-size: 13px; }
+#devices li.empty:hover { background: none; }
+
+.device-avatar-wrap { position: relative; width: 40px; height: 40px; flex-shrink: 0; }
+
+.device-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #2f6fed center / cover no-repeat;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+}
+
+#devices li.active .device-avatar { border-color: #2f6fed; box-shadow: 0 0 0 2px rgba(47,111,237,0.35); }
+
+.device-presence {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: #4a5261;
-  flex-shrink: 0;
+  border: 2px solid #0b0f14;
 }
 
-#devices li.online .online-dot { background: #34c759; }
+#devices li.online .device-presence { background: #34c759; }
 
-#devices .device-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#devices .device-sub { color: #7d8792; font-size: 11px; }
-
-.device-action-link {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  text-decoration: none;
-  color: #c3ccd6;
-  font-size: 11.5px;
-  font-weight: 600;
-  white-space: nowrap;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.device-action-link:hover { color: #e9edf1; background: rgba(255, 255, 255, 0.16); }
-
-.device-action-link .action-icon { font-size: 13px; line-height: 1; }
-
-/* En mobile/tablet solo el ícono, sin label, para no comerse el ancho */
-@media (max-width: 860px) {
-  .device-action-link { padding: 5px 6px; }
-  .device-action-link .action-label { display: none; }
-}
+.device-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 #new-device-btn {
   width: 100%;
@@ -369,13 +721,6 @@ button {
   flex-direction: column;
   gap: 8px;
   margin-bottom: 16px;
-}
-
-.skin-modal-btn {
-  width: 100%;
-  background: #1f242b;
-  font-size: 13px;
-  padding: 8px 10px;
 }
 
 .contacts-link {
@@ -629,35 +974,112 @@ button {
     min-height: calc(100vh - 44px);
   }
 
+  /* #top-bar y la tira de dispositivos ocupaban dos filas apiladas —
+     acá arriba se oculta el topbar de desktop entero y se arma una sola
+     fila dentro de #device-list: marca + tira scrolleable + íconos */
+  #top-bar { display: none; }
+
   #device-list {
     border-right: none;
     border-bottom: 1px solid #1f242b;
-    padding: 12px;
+    padding: 0;
     min-width: 0;
   }
 
-  .sidebar-top-actions { flex-direction: row; margin-bottom: 12px; }
-  .sidebar-top-actions button, .sidebar-top-actions a { width: auto; flex: 1; }
+  #mobile-topbar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-bottom: 1px solid #1f242b;
+  }
 
-  #devices { flex-direction: row; overflow-x: auto; padding-bottom: 2px; min-width: 0; }
-  /* En la tira horizontal, chip compacto: todo en una fila (sin label, solo ícono) */
-  #devices li { flex-shrink: 0; flex-direction: row; align-items: center; }
+  .mobile-only { display: flex; flex-shrink: 0; }
+  .mobile-only.top-bar-actions { gap: 6px; }
+  #mobile-topbar-row .top-icon-btn {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  #mobile-topbar-row .top-icon-btn .btn-label { display: none; }
+  #mobile-topbar-row .top-bar-brand { font-size: 18px; }
 
-  #new-device-btn { width: auto; margin-top: 8px; }
-  #new-device-form { flex-direction: row; flex-wrap: wrap; }
+  .sidebar-top-actions { display: none; }
 
-  #control-panel { padding: 14px; gap: 14px; min-width: 0; }
+  #devices {
+    flex: 1;
+    min-width: 0;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  #devices::-webkit-scrollbar { display: none; }
+
+  /* En la tira horizontal, avatar más chico y todo en un pill compacto */
+  #devices li {
+    flex-shrink: 0;
+    padding: 3px 10px 3px 3px;
+    border-radius: 16px;
+    background: #171c23;
+    border: 1px solid #1f242b;
+    font-size: 12px;
+  }
+  #devices li.active { border-color: #2f6fed; background: #1a1f26; }
+  #devices li.active .device-avatar { box-shadow: none; }
+
+  .device-avatar-wrap, .device-avatar { width: 26px; height: 26px; }
+  .device-avatar { font-size: 11px; }
+  .device-presence { width: 8px; height: 8px; border-width: 1.5px; }
+
+  #new-device-btn {
+    width: 34px;
+    height: 34px;
+    margin: 0;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: 300;
+    color: #7d8792;
+    background: #171c23;
+    flex-shrink: 0;
+  }
+  #new-device-btn .btn-label { display: none; }
+  #new-device-form { flex-direction: row; flex-wrap: wrap; padding: 8px 12px; margin-top: 0; }
+
+  /* chat-col y actions-col se quedan lado a lado (no apiladas) — la lista
+     de dispositivos ya no compite por ancho acá, pasó a ser una tira
+     horizontal arriba, así que sobra espacio para las dos columnas */
+  #chat-col { padding: 14px; gap: 14px; min-width: 0; }
 
   #room-messages { min-height: 220px; }
 
+  #room-settings { margin: 0 14px; }
   #room-settings > label input:not([type="file"]) { min-width: 140px; }
 
-  #quick-actions button { flex: 1; min-width: 130px; font-size: 12.5px; }
+  /* columna de acciones: sigue siempre visible (no drawer), más angosta —
+     con textos cortos sobraba fondo de tile vacío a los 300px de desktop */
+  #actions-col { width: 240px; padding: 14px 12px; }
+  .tile { min-height: 72px; padding: 9px 5px; }
+  .tile .tile-icon { font-size: 17px; }
+  .tile .tile-label { font-size: 10.5px; }
+}
+
+@media (max-width: 600px) {
+  /* a este ancho ya no entran chat + botonera lado a lado (celular, no
+     tablet) — se apilan, la botonera queda abajo del todo */
+  #control-panel { flex-direction: column; min-height: 0; }
+  #chat-col { min-height: 0; }
+  #room-messages { flex: 1; min-height: 160px; }
+  #actions-col { width: 100%; border-top: 1px solid #1f242b; max-height: 260px; }
+  #actions-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
 }
 
 @media (max-width: 480px) {
-  #top-bar { padding: 0 10px; }
   .top-bar-brand { font-size: 12px; }
-  #control-panel { padding: 10px; }
+  #chat-col { padding: 10px; }
   #room-messages .msg { max-width: 88%; }
 }
