@@ -228,18 +228,40 @@ body {
 
 #attach-btn:hover { background: #263041; }
 
-#voice-note-btn,
-#quick-notify-voice-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
-  background: #1f242b;
-  font-size: 16px;
+/* ---------- selector de tipo de mensaje: texto vs nota de voz ----------
+   Antes había un ícono de micrófono suelto al lado del input, que enviaba
+   una nota de voz simulada apenas se lo tocaba, sin relación visible con
+   el campo de texto — confuso ("¿esto manda lo que escribí?"). Ahora es
+   un toggle de dos estados: en modo texto el composer se comporta como
+   siempre (input + adjuntar + Enviar); en modo voz se ocultan input/
+   adjuntar y "Enviar" pasa a mandar la nota de voz simulada — un solo
+   botón de envío, sin ambigüedad sobre qué se está por mandar */
+.composer-mode-toggle {
+  display: flex;
   flex-shrink: 0;
-  padding: 0;
+  border: 1px solid #1f242b;
+  border-radius: 8px;
+  overflow: hidden;
 }
-#voice-note-btn:hover,
-#quick-notify-voice-btn:hover { background: #263041; }
+
+.composer-mode-btn {
+  width: 34px;
+  height: 38px;
+  padding: 0;
+  border-radius: 0;
+  background: #1a1f26;
+  color: #7d8792;
+  font-size: 15px;
+}
+
+.composer-mode-btn + .composer-mode-btn { border-left: 1px solid #1f242b; }
+.composer-mode-btn:hover { background: #263041; }
+.composer-mode-btn.active { background: #2f6fed; color: #fff; }
+
+#composer.mode-voice #message-input,
+#composer.mode-voice #attach-btn { display: none; }
+
+#quick-notify.mode-voice #quick-notify-input { display: none; }
 
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 

@@ -15,8 +15,10 @@ const messageInput = document.getElementById("message-input");
 const sendBtn = document.getElementById("send-btn");
 const imageInput = document.getElementById("image-input");
 const attachBtn = document.getElementById("attach-btn");
-const voiceNoteBtn = document.getElementById("voice-note-btn");
-const quickNotifyVoiceBtn = document.getElementById("quick-notify-voice-btn");
+const composerModeTextBtn = document.getElementById("composer-mode-text");
+const composerModeVoiceBtn = document.getElementById("composer-mode-voice");
+const quickNotifyModeTextBtn = document.getElementById("quick-notify-mode-text");
+const quickNotifyModeVoiceBtn = document.getElementById("quick-notify-mode-voice");
 const directionBtn = document.getElementById("direction-btn");
 const linkedHintOtherNameEl = document.getElementById("linked-hint-other-name");
 const notifyHintEl = document.getElementById("notify-hint");
@@ -332,6 +334,8 @@ conversationSelect.addEventListener("change", () => setActiveConversation(conver
 async function setActiveConversation(conversationId) {
   activeConversationId = conversationId;
   quickNotifyExpanded = false;
+  setComposerMode("text");
+  setQuickNotifyMode("text");
   clearTimeout(composerTypingTimeout);
   renderConversationSelect();
   const conversation = activeConversation();
@@ -717,7 +721,18 @@ async function sendVoiceNote() {
   if (isIncomingToActor(conversation)) broadcastNewMessageNotification(conversation, { is_voice: true });
 }
 
-voiceNoteBtn.addEventListener("click", sendVoiceNote);
+// Toggle texto/voz del composer principal — ver .composer-mode-toggle en
+// style.css para el motivo. sendBtn.click() se resuelve según el modo.
+let composerMode = "text";
+function setComposerMode(mode) {
+  composerMode = mode;
+  composerEl.classList.toggle("mode-voice", mode === "voice");
+  composerModeTextBtn.classList.toggle("active", mode === "text");
+  composerModeVoiceBtn.classList.toggle("active", mode === "voice");
+  sendBtn.textContent = mode === "voice" ? "Enviar nota de voz" : "Enviar";
+}
+composerModeTextBtn.addEventListener("click", () => setComposerMode("text"));
+composerModeVoiceBtn.addEventListener("click", () => setComposerMode("voice"));
 
 // Notificación "de otro contacto" del mismo dispositivo: independiente de
 // la conversación activa (no la toca, no la muestra) — siempre entrante,
@@ -746,7 +761,22 @@ async function sendQuickNotification() {
   broadcastNewMessageNotification(target, { content });
 }
 
-quickNotifySendBtn.addEventListener("click", sendQuickNotification);
+// Mismo toggle texto/voz que el composer principal — ver setComposerMode
+let quickNotifyMode = "text";
+function setQuickNotifyMode(mode) {
+  quickNotifyMode = mode;
+  quickNotifyEl.classList.toggle("mode-voice", mode === "voice");
+  quickNotifyModeTextBtn.classList.toggle("active", mode === "text");
+  quickNotifyModeVoiceBtn.classList.toggle("active", mode === "voice");
+  quickNotifySendBtn.textContent = mode === "voice" ? "Enviar nota de voz" : "Enviar";
+}
+quickNotifyModeTextBtn.addEventListener("click", () => setQuickNotifyMode("text"));
+quickNotifyModeVoiceBtn.addEventListener("click", () => setQuickNotifyMode("voice"));
+
+quickNotifySendBtn.addEventListener("click", () => {
+  if (quickNotifyMode === "voice") sendQuickVoiceNotification();
+  else sendQuickNotification();
+});
 quickNotifyInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendQuickNotification();
 });
@@ -770,8 +800,6 @@ async function sendQuickVoiceNotification() {
   }
   broadcastNewMessageNotification(target, { is_voice: true });
 }
-
-quickNotifyVoiceBtn.addEventListener("click", sendQuickVoiceNotification);
 
 // Pantalla de apagado/SOS: a nivel dispositivo (no de conversación), se ve
 // sin importar qué esté mirando el actor — mismo canal que las
@@ -882,6 +910,10 @@ homeScreenDeactivateBtn.addEventListener("click", () => {
 });
 
 sendBtn.addEventListener("click", async () => {
+  if (composerMode === "voice") {
+    sendVoiceNote();
+    return;
+  }
   const content = messageInput.value.trim();
   const conversation = activeConversation();
   if (!conversation || !content) return;

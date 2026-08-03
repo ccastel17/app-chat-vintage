@@ -106,10 +106,13 @@
         <div id="room-messages" class="hidden"></div>
 
         <div id="composer" class="hidden">
+          <div id="composer-mode" class="composer-mode-toggle" role="group" aria-label="Tipo de mensaje">
+            <button type="button" id="composer-mode-text" class="composer-mode-btn active" title="Mensaje de texto">💬</button>
+            <button type="button" id="composer-mode-voice" class="composer-mode-btn" title="Nota de voz simulada">🎙️</button>
+          </div>
           <input id="message-input" type="text" placeholder="Escribir mensaje..." />
           <label id="attach-btn" for="image-input" aria-label="Adjuntar foto">📎</label>
           <input id="image-input" type="file" accept="image/*" hidden />
-          <button id="voice-note-btn" type="button" aria-label="Enviar nota de voz" title="Enviar nota de voz simulada">🎙️</button>
           <button id="send-btn">Enviar</button>
         </div>
       </div>
@@ -190,8 +193,11 @@
             <label id="quick-notify-label">
               <select id="quick-notify-select"></select>
             </label>
+            <div id="quick-notify-mode" class="composer-mode-toggle" role="group" aria-label="Tipo de mensaje">
+              <button type="button" id="quick-notify-mode-text" class="composer-mode-btn active" title="Mensaje de texto">💬</button>
+              <button type="button" id="quick-notify-mode-voice" class="composer-mode-btn" title="Nota de voz simulada">🎙️</button>
+            </div>
             <input id="quick-notify-input" type="text" placeholder="Mensaje..." autocomplete="off" />
-            <button id="quick-notify-voice-btn" type="button" aria-label="Enviar nota de voz" title="Enviar nota de voz simulada">🎙️</button>
             <button id="quick-notify-send-btn" type="button">Enviar</button>
           </div>
 
