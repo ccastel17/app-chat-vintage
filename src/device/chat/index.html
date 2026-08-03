@@ -60,12 +60,26 @@
 
     <!-- Overlay de llamada entrante -->
     <div id="incoming-call-overlay" class="hidden">
-      <span id="call-avatar"></span>
-      <span id="caller-name">Contacto</span>
-      <span class="call-kind">Llamada de audio</span>
-      <div class="call-actions">
-        <button id="call-decline-btn" type="button" aria-label="Rechazar">✕</button>
-        <button id="call-accept-btn" type="button" aria-label="Contestar">📞</button>
+      <div class="call-ringing">
+        <span id="call-avatar"></span>
+        <span id="caller-name">Contacto</span>
+        <span id="call-kind" class="call-kind">Llamada de audio</span>
+        <div class="call-actions">
+          <button id="call-decline-btn" type="button" aria-label="Rechazar">✕</button>
+          <button id="call-accept-btn" type="button" aria-label="Contestar">📞</button>
+        </div>
+      </div>
+      <!-- Solo para videollamada: pantalla verde chroma con marcadores de
+           tracking estáticos, para compositar el video real en post -->
+      <div class="call-connected hidden">
+        <div class="call-tracker-screen">
+          <span class="call-tracker-mark tl"></span>
+          <span class="call-tracker-mark tr"></span>
+          <span class="call-tracker-mark bl"></span>
+          <span class="call-tracker-mark br"></span>
+          <span class="call-tracker-mark c"></span>
+        </div>
+        <button id="call-hangup-btn" type="button" aria-label="Colgar">📞</button>
       </div>
     </div>
 
@@ -83,6 +97,55 @@
       <div class="emergency-slider sos" data-slider>
         <span class="slider-thumb">SOS</span>
         <span class="slider-label">Emergencia SOS</span>
+      </div>
+    </div>
+
+    <!-- Pantalla de alarma simulada — a diferencia de la de arriba, el
+         actor SÍ la puede cerrar tocando "Detener"/"Posponer" (las dos
+         hacen lo mismo: cerrar, sin lógica de snooze real) -->
+    <div id="alarm-overlay" class="hidden">
+      <div class="alarm-info">
+        <span class="alarm-kind">⏰ Alarma</span>
+        <span id="alarm-time"></span>
+      </div>
+      <div class="alarm-actions">
+        <button id="alarm-snooze-btn" type="button">Posponer</button>
+        <button id="alarm-stop-btn" type="button">Detener</button>
+      </div>
+    </div>
+
+    <!-- Pantalla de inicio simulada — fondo/hora/fecha los define el
+         director; el actor la cierra con un swipe real hacia arriba
+         (src/shared/homeScreenOverlay.js), como desbloquear un iPhone -->
+    <div id="home-screen-overlay" class="hidden">
+      <div class="home-screen-drag-layer">
+        <div class="home-screen-bg"></div>
+        <div class="home-screen-vignette"></div>
+        <div class="home-screen-content">
+          <span id="home-screen-date"></span>
+          <span id="home-screen-time"></span>
+        </div>
+        <div class="home-screen-bottom">
+          <span class="home-screen-icon-btn" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8.5 2.5h7l-1 5.5h-5l-1-5.5Z" fill="#fff" />
+              <rect x="8.7" y="8" width="6.6" height="11" rx="1.6" fill="#fff" />
+              <path d="M9.2 19.5h5.6l-.9 2h-3.8l-.9-2Z" fill="#fff" />
+            </svg>
+          </span>
+          <span class="home-screen-icon-btn" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
+              <rect x="9" y="3.4" width="6" height="2.2" rx="1" fill="#fff" />
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M3 9a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9Zm9 9.2a5.2 5.2 0 1 0 0-10.4 5.2 5.2 0 0 0 0 10.4Z"
+                fill="#fff"
+              />
+            </svg>
+          </span>
+        </div>
+        <div class="home-screen-indicator"></div>
       </div>
     </div>
 

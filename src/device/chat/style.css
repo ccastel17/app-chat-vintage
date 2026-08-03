@@ -182,6 +182,47 @@ html, body {
   pointer-events: none;
 }
 
+/* ---------- burbuja de nota de voz (sin audio real, solo visual) ---------- */
+.bubble-voice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 180px;
+}
+
+.voice-play {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+}
+
+.bubble.outgoing .voice-play { background: rgba(255, 255, 255, 0.22); }
+
+.voice-wave {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 22px;
+}
+
+.voice-bar {
+  flex: 1;
+  min-width: 2px;
+  max-width: 3px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.voice-duration { font-size: 11px; opacity: 0.75; flex-shrink: 0; }
+
 .bubble.typing {
   display: flex;
   align-items: center;
@@ -207,17 +248,110 @@ html, body {
 
 #incoming-call-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  height: 100dvh;
+  height: var(--app-height, 100dvh);
   background: var(--skin-bg);
+  z-index: 10;
+}
+
+#incoming-call-overlay.hidden { display: none; }
+
+/* pinta de verde la capa raíz mientras dura la videollamada "conectada"
+   — junto con .call-connected de abajo, todas las capas del stack
+   comparten el mismo verde, así no importa cuál borde exacto es el que
+   iOS termina revelando al recortar el position:fixed */
+#incoming-call-overlay.video-connected { background: #00b140; }
+
+.call-ringing {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  z-index: 10;
 }
 
-#incoming-call-overlay.hidden { display: none; }
+.call-ringing.hidden { display: none; }
+
+/* ---------- videollamada "conectada": verde chroma + trackers ---------- */
+.call-connected {
+  position: absolute;
+  inset: 0;
+  background: #00b140;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 40px);
+}
+
+.call-connected.hidden { display: none; }
+
+.call-tracker-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* sobre-escaneo de 80px abajo — sin esto, si el overlay se queda unos
+     px corto (bug de dvh/safe-area en iOS standalone), se ve un corte de
+     color distinto en vez de verde chroma continuo hasta el borde real */
+  bottom: -300px;
+  /* verde chroma estándar de rodaje, no el #00ff00 puro — separa mejor
+     de tonos de piel al keyear en post */
+  background: #00b140;
+}
+
+.call-tracker-mark {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+}
+
+.call-tracker-mark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px #000;
+}
+
+.call-tracker-mark::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  background: #000;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.call-tracker-mark.tl { top: max(env(safe-area-inset-top, 0px), 20px); left: 20px; }
+.call-tracker-mark.tr { top: max(env(safe-area-inset-top, 0px), 20px); right: 20px; }
+.call-tracker-mark.bl { bottom: max(env(safe-area-inset-bottom, 0px), 20px); left: 20px; }
+.call-tracker-mark.br { bottom: max(env(safe-area-inset-bottom, 0px), 20px); right: 20px; }
+.call-tracker-mark.c { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+#call-hangup-btn {
+  position: relative;
+  z-index: 1;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  background: #e0433f;
+  color: #fff;
+  font-size: 22px;
+  /* teléfono rotado = "colgar", mismo lenguaje visual que apps reales */
+  transform: rotate(135deg);
+  cursor: pointer;
+}
 
 #call-avatar {
   width: 96px;
@@ -382,6 +516,11 @@ html, body {
 
 #notification-banner.visible { transform: translateY(0); }
 
+/* con la pantalla de inicio abierta (z-index 60), el banner queda tapado
+   por debajo si no se sube — solo mientras esa pantalla está activa
+   (ver homeScreenOverlay.js), no afecta al resto de los overlays */
+body.home-screen-active #notification-banner { z-index: 65; }
+
 #notification-avatar {
   width: 36px;
   height: 36px;
@@ -409,7 +548,12 @@ html, body {
 /* ---------- pantalla de apagado / Ficha médica / SOS (solo visual) ---------- */
 #emergency-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  height: 100dvh;
+  height: var(--app-height, 100dvh);
   z-index: 40;
   display: flex;
   flex-direction: column;
@@ -421,6 +565,27 @@ html, body {
 }
 
 #emergency-overlay.hidden { display: none; }
+
+/* mismo criterio que la pantalla de inicio: iOS recorta el contenido
+   position:fixed en un punto que no se puede calcular, así que en vez de
+   perseguirlo el fondo ya llega "vestido" del marrón de fuga bastante
+   antes de ese punto. ::before (no ::after) para que pinte DEBAJO de los
+   sliders en el mismo layer de stacking (position:absolute lo saca del
+   flex-flow, no rompe el centrado) */
+#emergency-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0) 78%,
+    rgba(42, 39, 34, 0.6) 88%,
+    #2a2722 96%,
+    #2a2722 100%
+  );
+}
 
 .emergency-slider {
   position: relative;
@@ -480,3 +645,208 @@ html, body {
 .emergency-slider.power .slider-label { color: #1a0800; }
 .emergency-slider.medical .slider-label,
 .emergency-slider.sos .slider-label { color: #fff; }
+
+/* ---------- pantalla de alarma simulada ---------- */
+#alarm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  height: 100dvh;
+  height: var(--app-height, 100dvh);
+  /* arriba de todos los takeovers anteriores (header=5, llamada=10,
+     visor=20, notificación=30, apagado/SOS=40) — es el más nuevo de la
+     pila y no hay ningún caso en el que otro deba taparlo a él */
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: max(env(safe-area-inset-top, 0px), 40px) 24px max(env(safe-area-inset-bottom, 0px), 40px);
+  background: #030405;
+  color: #fff;
+}
+
+#alarm-overlay.hidden { display: none; }
+
+/* mismo degradé a #2a2722 que el resto de los overlays (ver Reglas de
+   estilo de código, bug de clip de iOS en standalone) — ::before para
+   pintar detrás de .alarm-info/.alarm-actions sin sacarlos del flujo */
+#alarm-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0) 78%,
+    rgba(42, 39, 34, 0.6) 88%,
+    #2a2722 96%,
+    #2a2722 100%
+  );
+}
+
+.alarm-info {
+  margin-top: 14vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.alarm-kind {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+#alarm-time {
+  font-size: 64px;
+  font-weight: 600;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.alarm-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.alarm-actions button {
+  padding: 16px;
+  border-radius: 30px;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#alarm-snooze-btn { background: #f2c14e; color: #3a2a00; }
+#alarm-stop-btn { background: rgba(255, 255, 255, 0.16); color: #fff; backdrop-filter: blur(6px); }
+
+/* ---------- pantalla de inicio simulada (lock screen) ---------- */
+#home-screen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* mismo fallback que #chat-root — dvh solo no siempre llega hasta abajo
+     del todo en standalone (bug de WebKit ya documentado), --app-height
+     (atado a visualViewport) es más confiable */
+  height: 100vh;
+  height: 100dvh;
+  height: var(--app-height, 100dvh);
+  z-index: 60; /* el takeover más nuevo, arriba de la alarma (50) */
+  background: #000;
+  /* sin overflow:hidden a propósito — .home-screen-bg se pasa unos px de
+     este mismo borde para garantizar que cubra hasta abajo del todo aunque
+     el cálculo de arriba se quede corto; body ya tiene overflow:hidden,
+     así que no genera scroll de página */
+}
+
+#home-screen-overlay.hidden { display: none; }
+
+.home-screen-drag-layer {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  user-select: none;
+}
+
+.home-screen-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* se pasa 80px del borde inferior real (sobre-escaneo) — con
+     background-size:cover no se nota el recorte extra, y así tapa
+     cualquier hueco si #home-screen-overlay queda unos px corto */
+  bottom: -300px;
+  background: #16171a center / cover no-repeat;
+}
+
+/* viñeta sutil para que la hora/fecha se lean sobre cualquier fondo,
+   igual que hace iOS con su lock screen real */
+/* Capa aparte de .home-screen-bg a propósito: esa tiene bottom:-300px
+   (sobre-escaneo), así que un ::after suyo heredaría ese alto extra y el
+   degradé nunca llegaría a su tramo fuerte dentro de lo que se ve. Esta
+   capa sí mide inset:0 real, sin sobre-escaneo, para que los % del
+   gradiente mapeen contra la pantalla visible de verdad.
+   iOS recorta el contenido position:fixed en un punto que no podemos
+   calcular (80px y 300px de sobre-escaneo dieron el mismo corte) — en vez
+   de perseguir el píxel exacto, la foto ya llega "vestida" del marrón de
+   fuga bastante antes de ese punto, para que el corte, caiga donde caiga,
+   sea invisible */
+.home-screen-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0) 22%,
+    rgba(0, 0, 0, 0) 62%,
+    rgba(42, 39, 34, 0.6) 82%,
+    #2a2722 96%,
+    #2a2722 100%
+  );
+}
+
+.home-screen-content {
+  position: absolute;
+  top: max(env(safe-area-inset-top, 0px), 20px);
+  left: 0;
+  right: 0;
+  padding-top: 12vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #fff;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+}
+
+#home-screen-date { font-size: 16px; font-weight: 600; }
+#home-screen-time { font-size: clamp(84px, 22vw, 104px); font-weight: 700; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+
+.home-screen-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(env(safe-area-inset-bottom, 0px), 34px);
+  display: flex;
+  justify-content: space-between;
+  padding: 0 32px;
+}
+
+.home-screen-icon-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(58, 38, 20, 0.65);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.home-screen-indicator {
+  position: absolute;
+  bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 134px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.85);
+}

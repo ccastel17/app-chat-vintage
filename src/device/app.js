@@ -2,6 +2,9 @@
 import { supabase, DEVICES_PRESENCE_CHANNEL, notificationsChannelName } from "../shared/supabaseClient.js";
 import { applySkinVars, cacheSkin, loadCachedSkin } from "../shared/skin.js";
 import { wireEmergencySliders, showEmergencyOverlay, hideEmergencyOverlay } from "../shared/emergencyOverlay.js";
+import { showAlarmOverlay, hideAlarmOverlay } from "../shared/alarmOverlay.js";
+import { showIncomingCall, hideIncomingCall, connectVideoCall } from "../shared/callOverlay.js";
+import { showHomeScreenOverlay, hideHomeScreenOverlay, wireHomeScreenSwipe } from "../shared/homeScreenOverlay.js";
 
 const listEl = document.getElementById("chat-list");
 const notificationBannerEl = document.getElementById("notification-banner");
@@ -10,6 +13,27 @@ const notificationNameEl = document.getElementById("notification-name");
 const notificationTextEl = document.getElementById("notification-text");
 const emergencyOverlayEl = document.getElementById("emergency-overlay");
 wireEmergencySliders(emergencyOverlayEl);
+const alarmOverlayEl = document.getElementById("alarm-overlay");
+const callOverlayEl = document.getElementById("incoming-call-overlay");
+const callAvatarEl = document.getElementById("call-avatar");
+const callerNameEl = document.getElementById("caller-name");
+const callAcceptBtn = document.getElementById("call-accept-btn");
+const callDeclineBtn = document.getElementById("call-decline-btn");
+
+callDeclineBtn.addEventListener("click", () => hideIncomingCall(callOverlayEl));
+callAcceptBtn.addEventListener("click", () => {
+  // Video: en vez de cerrar, pasa a la pantalla verde con trackers —
+  // el actor cuelga desde ahí (o el director la corta desde /control)
+  if (callOverlayEl.dataset.isVideo === "true") {
+    connectVideoCall(callOverlayEl);
+    return;
+  }
+  callerNameEl.textContent = "Conectando...";
+  setTimeout(() => hideIncomingCall(callOverlayEl), 1500);
+});
+document.getElementById("call-hangup-btn").addEventListener("click", () => hideIncomingCall(callOverlayEl));
+
+const homeScreenOverlayEl = document.getElementById("home-screen-overlay");
 
 // #list-root usa --app-height (con 100dvh de fallback) — ver detalle en
 // device/chat/app.js
@@ -53,6 +77,17 @@ if (!roomId) {
   listEl.innerHTML = '<li class="empty">Falta el room_id en la URL (/device/roomId)</li>';
 } else {
   loadActiveSkin();
+
+  // Fondo persistido de la pantalla de inicio, para poder mostrarla acá
+  // sin depender de que el director la haya activado en esta sesión (ver
+  // dismissAlarm: al apagar/posponer la alarma, queda debajo el lock screen)
+  let roomHomeScreenBgUrl = null;
+  supabase
+    .from("rooms")
+    .select("home_screen_bg_url")
+    .eq("room_id", roomId)
+    .maybeSingle()
+    .then(({ data }) => { roomHomeScreenBgUrl = data?.home_screen_bg_url || null; });
 
   const conversations = new Map(); // id -> conversation row
   const previews = new Map(); // id -> { content, created_at }
@@ -116,7 +151,9 @@ if (!roomId) {
         avatarEl.textContent = initials(conversation.contact_name);
       }
       li.querySelector(".chat-name").textContent = conversation.contact_name;
-      li.querySelector(".chat-preview").textContent = preview ? preview.content : "Sin mensajes todavía";
+      li.querySelector(".chat-preview").textContent = preview
+        ? preview.is_voice ? "🎙️ Audio" : preview.content
+        : "Sin mensajes todavía";
       if (preview) {
         li.querySelector(".chat-time").textContent = new Date(preview.created_at).toLocaleTimeString([], {
           hour: "2-digit",
@@ -130,7 +167,7 @@ if (!roomId) {
   async function loadPreview(conversation) {
     const { data } = await supabase
       .from("messages")
-      .select("content, created_at")
+      .select("content, created_at, is_voice")
       .eq("thread_id", conversation.thread_id)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -178,7 +215,11 @@ if (!roomId) {
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
       const conversation = [...conversations.values()].find((c) => c.thread_id === payload.new.thread_id);
       if (!conversation) return;
-      previews.set(conversation.id, { content: payload.new.content, created_at: payload.new.created_at });
+      previews.set(conversation.id, {
+        content: payload.new.content,
+        created_at: payload.new.created_at,
+        is_voice: payload.new.is_voice,
+      });
       renderList();
       saveCache();
     })
@@ -228,10 +269,50 @@ if (!roomId) {
     }
   });
 
-  supabase
+  let lastAlarmTime = "";
+
+  const notificationChannel = supabase
     .channel(notificationsChannelName(roomId))
     .on("broadcast", { event: "new_message" }, ({ payload }) => showNotificationBanner(payload))
     .on("broadcast", { event: "emergency_screen_show" }, () => showEmergencyOverlay(emergencyOverlayEl))
     .on("broadcast", { event: "emergency_screen_hide" }, () => hideEmergencyOverlay(emergencyOverlayEl))
+    .on("broadcast", { event: "alarm_screen_show" }, ({ payload }) => {
+      lastAlarmTime = payload.time || "";
+      showAlarmOverlay(alarmOverlayEl, payload.time);
+    })
+    .on("broadcast", { event: "alarm_screen_hide" }, () => hideAlarmOverlay(alarmOverlayEl))
+    .on("broadcast", { event: "incoming_call" }, ({ payload }) => showIncomingCall(callOverlayEl, callAvatarEl, callerNameEl, payload))
+    .on("broadcast", { event: "end_call" }, () => hideIncomingCall(callOverlayEl))
+    .on("broadcast", { event: "home_screen_show" }, ({ payload }) => showHomeScreenOverlay(homeScreenOverlayEl, payload))
+    .on("broadcast", { event: "home_screen_hide" }, () => hideHomeScreenOverlay(homeScreenOverlayEl))
     .subscribe();
+
+  // A diferencia de la pantalla de apagado/SOS, acá el actor SÍ puede
+  // cerrar la alarma tocando "Detener" o "Posponer" (las dos hacen lo
+  // mismo) — es parte de la actuación, como una alarma real. Se reenvía
+  // el mismo evento de cierre para que /control salga de "activa" y no
+  // quede desincronizado si el actor la cerró antes de que lo haga el
+  // director.
+  function dismissAlarm() {
+    hideAlarmOverlay(alarmOverlayEl);
+    notificationChannel.send({ type: "broadcast", event: "alarm_screen_hide", payload: {} });
+    // Como en un iPhone real: al apagar/posponer, no vuelve directo a la
+    // app — queda debajo la pantalla de inicio. Hora = la de la alarma
+    // recién sonando; fecha en blanco (no hay una fuente confiable acá).
+    // Se reenvía como home_screen_show (mismo evento que usa /control al
+    // activarla) para que el panel del director se resincronice también.
+    const homeScreenPayload = { backgroundUrl: roomHomeScreenBgUrl, time: lastAlarmTime, date: "" };
+    showHomeScreenOverlay(homeScreenOverlayEl, homeScreenPayload);
+    notificationChannel.send({ type: "broadcast", event: "home_screen_show", payload: homeScreenPayload });
+  }
+  document.getElementById("alarm-stop-btn").addEventListener("click", dismissAlarm);
+  document.getElementById("alarm-snooze-btn").addEventListener("click", dismissAlarm);
+
+  // Misma razón que la alarma: el actor cierra con el swipe, y hay que
+  // avisarle a /control (si no, el panel del director queda mostrando
+  // "Cerrar pantalla" para algo que el actor ya cerró)
+  wireHomeScreenSwipe(homeScreenOverlayEl, () => {
+    hideHomeScreenOverlay(homeScreenOverlayEl);
+    notificationChannel.send({ type: "broadcast", event: "home_screen_hide", payload: {} });
+  });
 }

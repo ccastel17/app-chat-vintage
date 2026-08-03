@@ -4,6 +4,9 @@ import { applySkinVars, cacheSkin, loadCachedSkin } from "../../shared/skin.js";
 import { isOutgoing } from "../../shared/conversation.js";
 import { uploadChatImage } from "../../shared/uploadImage.js";
 import { wireEmergencySliders, showEmergencyOverlay, hideEmergencyOverlay } from "../../shared/emergencyOverlay.js";
+import { showAlarmOverlay, hideAlarmOverlay } from "../../shared/alarmOverlay.js";
+import { showIncomingCall, hideIncomingCall, connectVideoCall } from "../../shared/callOverlay.js";
+import { showHomeScreenOverlay, hideHomeScreenOverlay, wireHomeScreenSwipe } from "../../shared/homeScreenOverlay.js";
 
 // Pintar con el último skin conocido antes de esperar el fetch real —
 // para que el skeleton no arranque con los colores default del CSS
@@ -48,6 +51,7 @@ const notificationNameEl = document.getElementById("notification-name");
 const notificationTextEl = document.getElementById("notification-text");
 const emergencyOverlayEl = document.getElementById("emergency-overlay");
 wireEmergencySliders(emergencyOverlayEl);
+const alarmOverlayEl = document.getElementById("alarm-overlay");
 const callOverlayEl = document.getElementById("incoming-call-overlay");
 const callAvatarEl = document.getElementById("call-avatar");
 const callerNameEl = document.getElementById("caller-name");
@@ -103,15 +107,29 @@ function ticksFor(status) {
   return '<span class="bubble-ticks">✓</span>';
 }
 
+// Nota de voz simulada: sin audio real, solo la burbuja (onda estática +
+// duración inventada por /control) — ver criterio del proyecto de no usar
+// audio real en ningún overlay/feature
+function formatVoiceDuration(seconds) {
+  const s = Math.max(0, seconds || 0);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function voiceWaveBars() {
+  return Array.from({ length: 24 }, () => `<span class="voice-bar" style="height:${6 + Math.floor(Math.random() * 16)}px"></span>`).join("");
+}
+
 function renderMessage(conversation, myRoomId, message) {
   const outgoing = isOutgoing(conversation, message, myRoomId);
   const hasImage = Boolean(message.image_url);
-  const hasText = Boolean(message.content);
+  const hasVoice = Boolean(message.is_voice);
+  const hasText = !hasVoice && Boolean(message.content);
   const bubble = document.createElement("div");
   bubble.className = `bubble ${outgoing ? "outgoing" : "incoming"} ${hasImage && !hasText ? "image-only" : ""}`.trim();
   bubble.dataset.id = message.id;
   bubble.innerHTML = `
     ${hasImage ? '<img class="bubble-image" alt="Foto" />' : ""}
+    ${hasVoice ? `<div class="bubble-voice"><span class="voice-play">▶</span><span class="voice-wave">${voiceWaveBars()}</span><span class="voice-duration"></span></div>` : ""}
     ${hasText ? '<p class="bubble-text"></p>' : ""}
     <span class="bubble-meta">
       <span class="bubble-time"></span>
@@ -119,6 +137,7 @@ function renderMessage(conversation, myRoomId, message) {
     </span>
   `;
   if (hasImage) bubble.querySelector(".bubble-image").src = message.image_url;
+  if (hasVoice) bubble.querySelector(".voice-duration").textContent = formatVoiceDuration(message.voice_duration);
   if (hasText) bubble.querySelector(".bubble-text").textContent = message.content;
   bubble.querySelector(".bubble-time").textContent = new Date(message.created_at).toLocaleTimeString([], {
     hour: "2-digit",
@@ -157,17 +176,23 @@ function showTyping(isTyping) {
   }
 }
 
-function showIncomingCall(callerName) {
-  if (!callOverlayEl) return;
-  const name = callerName || "Contacto";
-  callerNameEl.textContent = name;
-  setAvatar(callAvatarEl, name, currentAvatarUrl);
-  callOverlayEl.classList.remove("hidden");
-}
+// Va por el canal de notificaciones (a nivel dispositivo), no por el
+// thread de esta conversación puntual — así interrumpe sin importar si el
+// actor está mirando este chat, otro, o la lista (ver notificationChannel
+// más abajo). callAcceptBtn/callDeclineBtn no dependen de la conversación
+// abierta, por eso se pueden cablear acá arriba sin esperar a initChat.
+callDeclineBtn.addEventListener("click", () => hideIncomingCall(callOverlayEl));
+callAcceptBtn.addEventListener("click", () => {
+  if (callOverlayEl.dataset.isVideo === "true") {
+    connectVideoCall(callOverlayEl);
+    return;
+  }
+  callerNameEl.textContent = "Conectando...";
+  setTimeout(() => hideIncomingCall(callOverlayEl), 1500);
+});
+document.getElementById("call-hangup-btn").addEventListener("click", () => hideIncomingCall(callOverlayEl));
 
-function hideIncomingCall() {
-  callOverlayEl?.classList.add("hidden");
-}
+const homeScreenOverlayEl = document.getElementById("home-screen-overlay");
 
 messagesEl.addEventListener("click", (e) => {
   const img = e.target.closest(".bubble-image");
@@ -186,6 +211,17 @@ if (!roomId || !conversationId) {
   messageInput.disabled = true;
 } else {
   loadActiveSkin();
+
+  // Fondo persistido de la pantalla de inicio, para poder mostrarla acá
+  // sin depender de que el director la haya activado en esta sesión (ver
+  // dismissAlarm: al apagar/posponer la alarma, queda debajo el lock screen)
+  let roomHomeScreenBgUrl = null;
+  supabase
+    .from("rooms")
+    .select("home_screen_bg_url")
+    .eq("room_id", roomId)
+    .maybeSingle()
+    .then(({ data }) => { roomHomeScreenBgUrl = data?.home_screen_bg_url || null; });
 
   // Caché en localStorage: pinta instantáneo con el último estado conocido
   // (nombre/foto/estado del contacto + últimos mensajes) mientras se espera
@@ -312,15 +348,7 @@ if (!roomId || !conversationId) {
         }
       )
       .on("broadcast", { event: "typing" }, ({ payload }) => showTyping(payload.isTyping))
-      .on("broadcast", { event: "incoming_call" }, ({ payload }) => showIncomingCall(payload.callerName))
-      .on("broadcast", { event: "end_call" }, () => hideIncomingCall())
       .subscribe();
-
-    callDeclineBtn.addEventListener("click", hideIncomingCall);
-    callAcceptBtn.addEventListener("click", () => {
-      callerNameEl.textContent = "Conectando...";
-      setTimeout(hideIncomingCall, 1500);
-    });
 
     function broadcastMyTyping(isTyping) {
       if (conversation.kind !== "linked") return; // solo tiene sentido entre dos actores reales
@@ -410,7 +438,9 @@ if (!roomId || !conversationId) {
     }
   });
 
-  supabase
+  let lastAlarmTime = "";
+
+  const notificationChannel = supabase
     .channel(notificationsChannelName(roomId))
     .on("broadcast", { event: "new_message" }, ({ payload }) => {
       if (payload.conversationId === conversationId) return;
@@ -430,5 +460,34 @@ if (!roomId || !conversationId) {
     })
     .on("broadcast", { event: "emergency_screen_show" }, () => showEmergencyOverlay(emergencyOverlayEl))
     .on("broadcast", { event: "emergency_screen_hide" }, () => hideEmergencyOverlay(emergencyOverlayEl))
+    .on("broadcast", { event: "alarm_screen_show" }, ({ payload }) => {
+      lastAlarmTime = payload.time || "";
+      showAlarmOverlay(alarmOverlayEl, payload.time);
+    })
+    .on("broadcast", { event: "alarm_screen_hide" }, () => hideAlarmOverlay(alarmOverlayEl))
+    .on("broadcast", { event: "incoming_call" }, ({ payload }) => showIncomingCall(callOverlayEl, callAvatarEl, callerNameEl, payload))
+    .on("broadcast", { event: "end_call" }, () => hideIncomingCall(callOverlayEl))
+    .on("broadcast", { event: "home_screen_show" }, ({ payload }) => showHomeScreenOverlay(homeScreenOverlayEl, payload))
+    .on("broadcast", { event: "home_screen_hide" }, () => hideHomeScreenOverlay(homeScreenOverlayEl))
     .subscribe();
+
+  // Ver device/app.js — mismo motivo: acá el actor sí puede cerrar la
+  // alarma él mismo, y hay que reenviar el cierre para que /control se
+  // entere si fue el actor (no el director) quien la cerró.
+  function dismissAlarm() {
+    hideAlarmOverlay(alarmOverlayEl);
+    notificationChannel.send({ type: "broadcast", event: "alarm_screen_hide", payload: {} });
+    // Ver device/app.js — al apagar/posponer, queda debajo la pantalla de
+    // inicio en vez de volver directo a la app.
+    const homeScreenPayload = { backgroundUrl: roomHomeScreenBgUrl, time: lastAlarmTime, date: "" };
+    showHomeScreenOverlay(homeScreenOverlayEl, homeScreenPayload);
+    notificationChannel.send({ type: "broadcast", event: "home_screen_show", payload: homeScreenPayload });
+  }
+  document.getElementById("alarm-stop-btn").addEventListener("click", dismissAlarm);
+  document.getElementById("alarm-snooze-btn").addEventListener("click", dismissAlarm);
+
+  wireHomeScreenSwipe(homeScreenOverlayEl, () => {
+    hideHomeScreenOverlay(homeScreenOverlayEl);
+    notificationChannel.send({ type: "broadcast", event: "home_screen_hide", payload: {} });
+  });
 }
