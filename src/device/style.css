@@ -47,10 +47,11 @@ html, body {
   height: 100dvh;
   height: var(--app-height, 100dvh);
   background: var(--skin-bg);
-  /* mismo número que en /device/chat — por debajo del visor de fotos (20,
-     que acá no existe) / banner (30) / apagado-SOS (40) / alarma (50) /
-     pantalla de inicio (60) */
-  z-index: 10;
+  /* mismo número que en /device/chat — arriba de todo lo demás,
+     incluida la pantalla de inicio (60), apagado/SOS (70) y alarma
+     (80): una llamada entrante interrumpe cualquier otra pantalla, como
+     en un iPhone real (a propósito el takeover más alto de la pila) */
+  z-index: 90;
 }
 
 #incoming-call-overlay.hidden { display: none; }
@@ -163,9 +164,9 @@ html, body {
   100% { box-shadow: 0 0 0 0 transparent; }
 }
 
-#caller-name { font-size: 22px; font-weight: 600; }
+#caller-name { font-size: 27px; font-weight: 600; }
 
-.call-kind { font-size: 13px; color: var(--skin-muted); }
+.call-kind { font-size: 16px; color: var(--skin-muted); }
 
 .call-actions { display: flex; gap: 56px; margin-top: 48px; }
 
@@ -392,7 +393,10 @@ body.home-screen-active #notification-banner { z-index: 65; }
   height: 100vh;
   height: 100dvh;
   height: var(--app-height, 100dvh);
-  z-index: 40;
+  /* arriba de la pantalla de inicio (60) a propósito: el director puede
+     dispararla con la pantalla de inicio ya mostrada y se tiene que ver
+     por encima, no quedar tapada detrás (mismo motivo que la alarma) */
+  z-index: 70;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -510,8 +514,13 @@ body.home-screen-active #notification-banner { z-index: 65; }
   height: 100vh;
   height: 100dvh;
   height: var(--app-height, 100dvh);
-  /* arriba de la pantalla de apagado/SOS (40) — es el takeover más nuevo */
-  z-index: 50;
+  /* arriba de la pantalla de inicio (60) y de apagado/SOS (70) a
+     propósito: el director puede activar el despertador con cualquiera
+     de esas dos ya mostrada, y una alarma real suena por encima de la
+     lock screen, no se queda tapada detrás — antes esto compartía nivel
+     con apagado/SOS (50) y quedaba oculta detrás de la pantalla de
+     inicio si esta ya estaba activa */
+  z-index: 80;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -609,6 +618,9 @@ body.home-screen-active #notification-banner { z-index: 65; }
   height: 100vh;
   height: 100dvh;
   height: var(--app-height, 100dvh);
+  /* apagado/SOS (70), alarma (80) y llamada entrante (90) pueden
+     dispararse por encima de esta pantalla — todas interrumpen la lock
+     screen, como en un iPhone real */
   z-index: 60;
   background: #000;
   /* sin overflow:hidden a propósito — ver .home-screen-bg */

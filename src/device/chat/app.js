@@ -110,13 +110,59 @@ function ticksFor(status) {
 // Nota de voz simulada: sin audio real, solo la burbuja (onda estática +
 // duración inventada por /control) — ver criterio del proyecto de no usar
 // audio real en ningún overlay/feature
+
+// SVG plano (currentColor, hereda el color de texto de la burbuja) en vez
+// de los caracteres ▶/⏸ — el de pausa se renderizaba como emoji en vez de
+// glifo plano en algunos sistemas, desentonando con el ▶ de al lado
+// (mismo criterio que los íconos de 🔦/📷 de la pantalla de inicio)
+const PLAY_ICON = '<svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true"><path d="M6 4l14 8-14 8V4z" fill="currentColor"/></svg>';
+const PAUSE_ICON = '<svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1" fill="currentColor"/><rect x="14" y="4" width="5" height="16" rx="1" fill="currentColor"/></svg>';
+
 function formatVoiceDuration(seconds) {
   const s = Math.max(0, seconds || 0);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
 function voiceWaveBars() {
-  return Array.from({ length: 24 }, () => `<span class="voice-bar" style="height:${6 + Math.floor(Math.random() * 16)}px"></span>`).join("");
+  // Mismas alturas en las dos capas (base + progreso), para que al
+  // revelarse una encima de la otra las barras queden pixel a pixel
+  // alineadas — ver .voice-wave-progress en style.css
+  const heights = Array.from({ length: 24 }, () => 6 + Math.floor(Math.random() * 16));
+  const bars = () => heights.map((h) => `<span class="voice-bar" style="height:${h}px"></span>`).join("");
+  return `<span class="voice-wave-base">${bars()}</span><span class="voice-wave-progress">${bars()}</span>`;
+}
+
+// Sin audio real: tocar ▶ solo anima el avance de la onda durante los
+// segundos que dice la duración inventada, como si se estuviera
+// reproduciendo — ver .voice-wave-progress en style.css. Un solo audio
+// "sonando" a la vez: tocar otro corta el anterior, igual que un
+// reproductor real.
+let activeVoicePlayback = null; // { playBtn, progressEl, timeoutId }
+
+function stopVoicePlayback() {
+  if (!activeVoicePlayback) return;
+  const { playBtn, progressEl, timeoutId } = activeVoicePlayback;
+  clearTimeout(timeoutId);
+  playBtn.innerHTML = PLAY_ICON;
+  progressEl.style.transitionDuration = "0s";
+  progressEl.classList.remove("playing");
+  activeVoicePlayback = null;
+}
+
+function toggleVoicePlayback(bubble, durationSeconds) {
+  const playBtn = bubble.querySelector(".voice-play");
+  const progressEl = bubble.querySelector(".voice-wave-progress");
+  const wasThisPlaying = activeVoicePlayback?.playBtn === playBtn;
+  stopVoicePlayback();
+  if (wasThisPlaying) return;
+
+  playBtn.innerHTML = PAUSE_ICON;
+  progressEl.style.transitionDuration = `${Math.max(1, durationSeconds)}s`;
+  // el cambio de clase tiene que llegar en el frame siguiente al de
+  // transitionDuration, si no el navegador puede saltarse la transición
+  requestAnimationFrame(() => progressEl.classList.add("playing"));
+  const timeoutId = setTimeout(stopVoicePlayback, Math.max(1, durationSeconds) * 1000);
+  activeVoicePlayback = { playBtn, progressEl, timeoutId };
 }
 
 function renderMessage(conversation, myRoomId, message) {
@@ -129,7 +175,7 @@ function renderMessage(conversation, myRoomId, message) {
   bubble.dataset.id = message.id;
   bubble.innerHTML = `
     ${hasImage ? '<img class="bubble-image" alt="Foto" />' : ""}
-    ${hasVoice ? `<div class="bubble-voice"><span class="voice-play">▶</span><span class="voice-wave">${voiceWaveBars()}</span><span class="voice-duration"></span></div>` : ""}
+    ${hasVoice ? `<div class="bubble-voice"><button type="button" class="voice-play" aria-label="Reproducir nota de voz">${PLAY_ICON}</button><span class="voice-wave">${voiceWaveBars()}</span><span class="voice-duration"></span></div>` : ""}
     ${hasText ? '<p class="bubble-text"></p>' : ""}
     <span class="bubble-meta">
       <span class="bubble-time"></span>
@@ -137,7 +183,10 @@ function renderMessage(conversation, myRoomId, message) {
     </span>
   `;
   if (hasImage) bubble.querySelector(".bubble-image").src = message.image_url;
-  if (hasVoice) bubble.querySelector(".voice-duration").textContent = formatVoiceDuration(message.voice_duration);
+  if (hasVoice) {
+    bubble.querySelector(".voice-duration").textContent = formatVoiceDuration(message.voice_duration);
+    bubble.querySelector(".voice-play").addEventListener("click", () => toggleVoicePlayback(bubble, message.voice_duration));
+  }
   if (hasText) bubble.querySelector(".bubble-text").textContent = message.content;
   bubble.querySelector(".bubble-time").textContent = new Date(message.created_at).toLocaleTimeString([], {
     hour: "2-digit",

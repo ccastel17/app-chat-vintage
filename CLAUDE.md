@@ -273,10 +273,12 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     Sin sonido — puramente visual, mismo criterio que el resto de los
     overlays del proyecto (se evaluó agregar audio real y se descartó:
     riesgo de que el navegador bloquee el autoplay sin gesto previo del
-    usuario, y de que un sonido fuerte arruine una toma en vivo). Nueva
-    en la jerarquía de z-index de `/device` y `/device/chat`:
-    `#alarm-overlay` = 50, por encima incluso de la de apagado/SOS (40) —
-    es el takeover más nuevo de la pila, agregado arriba de todos
+    usuario, y de que un sonido fuerte arruine una toma en vivo).
+    `#alarm-overlay` = z-index 80. Ver "Pantalla Inicio" más abajo para
+    la jerarquía completa — todos los takeovers de pantalla completa
+    (apagado/SOS, alarma, llamada entrante) se pueden disparar con la
+    pantalla de inicio ya mostrada y se ven por encima de ella, en vez
+    de quedar tapados detrás
   - **"🔔 Notificar de otro contacto"**: despliega (colapsado por
     default, un click lo abre/cierra) un desplegable + input para
     notificar al actor de un chat DISTINTO al que el director tiene
@@ -324,24 +326,46 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     resincronización que la alarma: si el actor cierra antes que el
     director, se reenvía `home_screen_hide` para que el panel de
     `/control` no quede mostrando "Cerrar pantalla" de algo que ya se
-    cerró. `#home-screen-overlay` = z-index 60, el takeover más nuevo,
-    arriba de todos (alarma quedó en 50). Dentro de `#home-screen-panel`,
+    cerró. `#home-screen-overlay` = z-index 60 — el resto de los
+    takeovers de pantalla completa (apagado/SOS = 70, alarma = 80,
+    llamada entrante = 90) se pueden disparar con la pantalla de inicio
+    ya mostrada y se ven por encima de ella en vez de quedar tapados
+    detrás, a propósito: el director puede, por ejemplo, hacer sonar el
+    despertador o recibir una llamada con la pantalla de inicio ya
+    activa. Dentro de `#home-screen-panel`,
     un link "❔ Cómo poner una hora falsa en el iPhone" abre
     `#home-screen-help-modal` (mismo texto que antes vivía en un Artifact
     externo, ahora adentro de la app — un link fuera de la herramienta no
     era robusto para operar en pleno rodaje sin conexión)
-  - **"🎙️ nota de voz"** (botón aparte del de enviar, en el composer
-    principal y en el de "Notificar de otro contacto"): sin audio real
-    — mismo criterio que todos los overlays del proyecto. Inserta un
-    mensaje con `content: ''`, `is_voice: true` y una duración inventada
-    (`voice_duration`, 4–42s al azar) usando la misma `messagePayloadFor`
-    de siempre (respeta simulada/linkeada e incoming/outgoing igual que
-    un mensaje de texto). La burbuja en `/device/chat` se renderiza como
-    nota de voz real (▶ + onda estática de barras con alto aleatorio +
-    duración) en vez de texto; en `/control` se ve como "🎙️ Nota de voz
-    · 0:12" en cursiva. El banner de notificación y el preview de la
-    lista de chats en `/device` muestran "🎙️ Audio" en vez de contenido
-    vacío cuando el mensaje es de voz
+  - **"🎙️ nota de voz"**: sin audio real — mismo criterio que todos los
+    overlays del proyecto. Se elige con un toggle 💬/🎙️ al lado del
+    campo de mensaje (en el composer principal y en el de "Notificar de
+    otro contacto") — antes era un ícono de micrófono suelto que mandaba
+    la nota apenas se lo tocaba, sin relación visible con el campo de
+    texto ("¿esto manda lo que escribí?"); ahora en modo voz se ocultan
+    el input y adjuntar, y "Enviar" pasa a mandar la nota (un solo botón
+    de envío, sin ambigüedad). Inserta un mensaje con `content: ''`,
+    `is_voice: true` y una duración inventada (`voice_duration`, 4–42s
+    al azar) usando la misma `messagePayloadFor` de siempre (respeta
+    simulada/linkeada e incoming/outgoing igual que un mensaje de
+    texto). La burbuja en `/device/chat` se renderiza como nota de voz
+    real (▶ + onda de barras con alto aleatorio + duración) en vez de
+    texto; en `/control` se ve como "🎙️ Nota de voz · 0:12" en cursiva.
+    El banner de notificación y el preview de la lista de chats en
+    `/device` muestran "🎙️ Audio" en vez de contenido vacío cuando el
+    mensaje es de voz. Tocar ▶ en `/device/chat` simula la reproducción:
+    dos copias idénticas de la misma onda superpuestas (mismas alturas
+    de barra, generadas una sola vez para que coincidan pixel a pixel),
+    la de encima tapada con `clip-path` y revelada de izquierda a
+    derecha con una transición CSS cuya duración es la de la nota — así
+    el "avance" tarda exactamente lo que dice el reloj. Un solo audio
+    "sonando" a la vez (tocar otro corta el anterior); tocar el que está
+    sonando lo corta y resetea la onda, igual que un reproductor real.
+    ▶/⏸ son SVG inline plano (`currentColor`, hereda el color de texto
+    de la burbuja) en vez de caracteres — el de pausa (⏸) se renderizaba
+    como emoji en vez de glifo plano en algunos sistemas, desentonando
+    con el ▶ de al lado (mismo criterio que 🔦/📷 de la pantalla de
+    inicio, ver Reglas de estilo de código)
   - Modal "Apariencia" (🎨): editor de skins con preview en vivo tipo
     mini-teléfono
 - `/control/contacts` → gestión de la lista de chats de cada dispositivo
@@ -386,12 +410,16 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     con `overflow: hidden`). `#messages` compensa el espacio con
     `padding-top: var(--header-height, 70px)`, medido en vivo por
     `app.js` con un `ResizeObserver` sobre el header (por si cambia:
-    skin, tamaño de letra, safe-area). `z-index: 5` — por debajo de la
-    llamada entrante (10) / visor de fotos (20) / banner de notificación
-    (30) / pantalla de apagado-SOS (40) / pantalla de alarma (50) /
-    pantalla de inicio (60), que son todos takeovers de pantalla completa
-    y tienen que tapar el
-    header, no al revés
+    skin, tamaño de letra, safe-area). `z-index: 5` — por debajo del
+    visor de fotos (20) / banner de notificación (30) / pantalla de
+    inicio (60) / pantalla de apagado-SOS (70) / pantalla de alarma (80)
+    / llamada entrante (90), que son todos takeovers de pantalla
+    completa y tienen que tapar el
+    header, no al revés. `#messages` tiene `justify-content: flex-end` —
+    con pocos mensajes (o ninguno todavía) quedaban pegados arriba,
+    contra el header, con toda la pantalla vacía debajo hasta el
+    composer; ahora se pegan abajo como en WhatsApp/iMessage, y con
+    muchos mensajes el scroll sigue igual (no depende de esta propiedad)
   - `/device/[roomId]` y `/device/[roomId]/chat/[conversationId]` son
     documentos HTML separados (no una SPA) — cada navegación entre
     lista↔chat recarga todo desde cero y reabre los canales Realtime, lo
