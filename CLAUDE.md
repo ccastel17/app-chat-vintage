@@ -230,6 +230,33 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     la grilla — el otro queda `hidden`); el director la cierra a mano, a
     propósito no hay forma de que el actor la cierre él mismo (tiene que
     actuar la escena, no interrumpirla tocando la pantalla)
+  - **"📵 Llamada SOS activa"**: pantalla alternativa a la de arriba —
+    simula el resultado de completar el slider "Emergencia SOS" (la
+    llamada al 112 ya en curso: número grande + "Llamada SOS:
+    llamando…" en rojo + grilla de 6 botones tipo Teléfono de iOS
+    —silenciar/teclado/altavoz habilitados, añadir llamada/FaceTime
+    atenuados como "no disponibles"— + botón colgar). A diferencia de
+    apagado/SOS, acá el botón de colgar SÍ funciona — el actor puede
+    cortar la llamada él mismo (cortar es parte de la actuación, no
+    una interrupción de la escena), y reenvía `sos_call_hide` para que
+    `/control` se resincronice si colgó antes que el director. Se
+    puede disparar de dos formas: el director la activa desde el tile,
+    o el actor la dispara él mismo completando de verdad el slider
+    "Emergencia SOS" — es la ÚNICA excepción a la regla de que los
+    sliders de `#emergency-overlay` son puramente visuales
+    (`wireEmergencySliders` en `src/shared/emergencyOverlay.js` acepta
+    un callback `onSosComplete`, solo lo usa el slider `.sos`; apagar y
+    Ficha médica siguen sin hacer nada, el thumb siempre vuelve a su
+    lugar). Cuando lo dispara el actor, `device/app.js`/`device/chat/app.js`
+    reenvían el mismo `sos_call_show` que manda `/control`, así el panel
+    del director se resincroniza igual que con la alarma/pantalla de
+    inicio (`src/shared/sosCallOverlay.js`). Son pantallas alternativas
+    de la misma escena — activar una apaga la otra automáticamente si
+    estaba encendida, tanto en el actor como en el estado de los tiles
+    de `/control` — para que nunca queden las dos encendidas a la vez
+    por accidente. El fondo desenfocado reusa la misma foto que la
+    pantalla de inicio (`rooms.home_screen_bg_url`, si el director ya
+    subió una) en vez de pedir una imagen aparte
   - **"⏰ Simular despertador"**: pantalla de alarma sonando (tipo lock
     screen de iOS — ícono + hora grande + "Posponer"/"Detener"), sobre lo
     que sea que el actor esté mirando, mismo canal y alcance que la de
@@ -977,5 +1004,19 @@ swipe) y reenvía el `_hide` de vuelta para que `/control` se resincronice
   lista de dispositivos avatar+nombre con presencia, fila unificada en
   tablet) — ver detalle en `/control/contacts` (Arquitectura de rutas).
   Probado con Playwright en desktop y tablet, sin errores de consola
+- "📵 Llamada SOS activa" en `/control`: pantalla alternativa a
+  "Pantalla de apagado/SOS" — simula la llamada al 112 ya en curso
+  (número + "Llamada SOS: llamando…" + grilla de botones tipo Teléfono
+  de iOS + colgar), ver detalle en `/control` (Arquitectura de rutas).
+  Se apagan una a la otra automáticamente al activar cualquiera de las
+  dos. Probado con Playwright: mutuamente excluyentes en el actor y en
+  los tiles de `/control`, fondo desenfocado reusando la foto de la
+  pantalla de inicio, cierre remoto desde el director
+- Chequeo visual en Android (emulación Pixel 7 en Chrome/Playwright, no
+  reemplaza una instalación real): lista, chat con notas de voz,
+  pantalla de inicio, apagado/SOS y alarma apiladas, llamada de audio,
+  videollamada y banner de notificación — todo correcto, sin errores de
+  consola. No confirma manifest/instalación PWA real en un Android
+  físico, solo layout/render
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
   placeholder por diseño final, probar instalación real en Android

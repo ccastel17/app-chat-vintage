@@ -2,6 +2,7 @@
 import { supabase, DEVICES_PRESENCE_CHANNEL, notificationsChannelName } from "../shared/supabaseClient.js";
 import { applySkinVars, cacheSkin, loadCachedSkin } from "../shared/skin.js";
 import { wireEmergencySliders, showEmergencyOverlay, hideEmergencyOverlay } from "../shared/emergencyOverlay.js";
+import { showSosCallOverlay, hideSosCallOverlay } from "../shared/sosCallOverlay.js";
 import { showAlarmOverlay, hideAlarmOverlay } from "../shared/alarmOverlay.js";
 import { showIncomingCall, hideIncomingCall, connectVideoCall } from "../shared/callOverlay.js";
 import { showHomeScreenOverlay, hideHomeScreenOverlay, wireHomeScreenSwipe } from "../shared/homeScreenOverlay.js";
@@ -12,7 +13,7 @@ const notificationAvatarEl = document.getElementById("notification-avatar");
 const notificationNameEl = document.getElementById("notification-name");
 const notificationTextEl = document.getElementById("notification-text");
 const emergencyOverlayEl = document.getElementById("emergency-overlay");
-wireEmergencySliders(emergencyOverlayEl);
+const sosCallOverlayEl = document.getElementById("sos-call-overlay");
 const alarmOverlayEl = document.getElementById("alarm-overlay");
 const callOverlayEl = document.getElementById("incoming-call-overlay");
 const callAvatarEl = document.getElementById("call-avatar");
@@ -276,6 +277,8 @@ if (!roomId) {
     .on("broadcast", { event: "new_message" }, ({ payload }) => showNotificationBanner(payload))
     .on("broadcast", { event: "emergency_screen_show" }, () => showEmergencyOverlay(emergencyOverlayEl))
     .on("broadcast", { event: "emergency_screen_hide" }, () => hideEmergencyOverlay(emergencyOverlayEl))
+    .on("broadcast", { event: "sos_call_show" }, ({ payload }) => showSosCallOverlay(sosCallOverlayEl, payload))
+    .on("broadcast", { event: "sos_call_hide" }, () => hideSosCallOverlay(sosCallOverlayEl))
     .on("broadcast", { event: "alarm_screen_show" }, ({ payload }) => {
       lastAlarmTime = payload.time || "";
       showAlarmOverlay(alarmOverlayEl, payload.time);
@@ -314,5 +317,30 @@ if (!roomId) {
   wireHomeScreenSwipe(homeScreenOverlayEl, () => {
     hideHomeScreenOverlay(homeScreenOverlayEl);
     notificationChannel.send({ type: "broadcast", event: "home_screen_hide", payload: {} });
+  });
+
+  // Único slider de los tres que dispara algo real: completar
+  // "Emergencia SOS" pasa a la pantalla de llamada SOS en curso (los
+  // otros dos, apagar y Ficha médica, siguen sin hacer nada — el thumb
+  // vuelve a su lugar igual que siempre). Se reenvía el mismo evento
+  // sos_call_show que usa /control para que el panel del director se
+  // resincronice (tile pasa a "Cerrar llamada SOS", y si "Pantalla de
+  // apagado/SOS" seguía marcada como activa ahí, se apaga sola).
+  wireEmergencySliders(emergencyOverlayEl, {
+    onSosComplete: () => {
+      hideEmergencyOverlay(emergencyOverlayEl);
+      const sosCallPayload = { backgroundUrl: roomHomeScreenBgUrl };
+      showSosCallOverlay(sosCallOverlayEl, sosCallPayload);
+      notificationChannel.send({ type: "broadcast", event: "sos_call_show", payload: sosCallPayload });
+    },
+  });
+
+  // A diferencia de apagado/SOS, acá el actor SÍ puede colgar él mismo
+  // (cortar la llamada es parte de la actuación) — reenvía el cierre
+  // para que /control se resincronice si el actor colgó antes que el
+  // director
+  sosCallOverlayEl.querySelector(".sos-call-hangup").addEventListener("click", () => {
+    hideSosCallOverlay(sosCallOverlayEl);
+    notificationChannel.send({ type: "broadcast", event: "sos_call_hide", payload: {} });
   });
 }

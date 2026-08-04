@@ -120,6 +120,50 @@
       </div>
     </div>
 
+    <!-- Pantalla alternativa a la de arriba: la llamada SOS ya en curso
+         (resultado de completar el slider "Emergencia SOS") — mismo
+         criterio, solo visual y solo el director la cierra. El fondo
+         desenfocado reusa la foto de la pantalla de inicio si hay una -->
+    <div id="sos-call-overlay" class="hidden">
+      <div class="sos-call-bg"></div>
+      <div class="sos-call-scrim"></div>
+      <div class="sos-call-header">
+        <span class="sos-call-number">112</span>
+        <span class="sos-call-status">Llamada SOS: llamando…</span>
+      </div>
+      <div class="sos-call-grid">
+        <div class="sos-call-btn">
+          <span class="sos-call-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M4 4l16 16"/></svg></span>
+          <span class="sos-call-label">silenciar</span>
+        </div>
+        <div class="sos-call-btn">
+          <span class="sos-call-icon"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="7" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="17" cy="6" r="1.6"/><circle cx="7" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="17" cy="12" r="1.6"/><circle cx="7" cy="18" r="1.6"/><circle cx="12" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg></span>
+          <span class="sos-call-label">teclado</span>
+        </div>
+        <div class="sos-call-btn">
+          <span class="sos-call-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" stroke="none"/><path d="M16.3 9a5 5 0 0 1 0 6"/><path d="M19 6.5a9 9 0 0 1 0 11"/></svg></span>
+          <span class="sos-call-label">altavoz</span>
+        </div>
+        <div class="sos-call-btn disabled">
+          <span class="sos-call-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+          <span class="sos-call-label">añadir llamada</span>
+        </div>
+        <div class="sos-call-btn disabled">
+          <span class="sos-call-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="12" height="10" rx="2"/><path d="M15 10l6-3v10l-6-3z"/></svg>
+            <span class="sos-call-badge">?</span>
+          </span>
+          <span class="sos-call-label">FaceTime</span>
+        </div>
+        <div class="sos-call-btn">
+          <span class="sos-call-icon"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8.5" r="3.2"/><path d="M5.5 19c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <span class="sos-call-label">contactos</span>
+        </div>
+      </div>
+      <button type="button" class="sos-call-hangup" aria-label="Colgar">📞</button>
+      <div class="sos-call-indicator"></div>
+    </div>
+
     <!-- Pantalla de alarma simulada — a diferencia de la de arriba, el
          actor SÍ la puede cerrar tocando "Detener"/"Posponer" (las dos
          hacen lo mismo: cerrar, sin lógica de snooze real) -->

@@ -47,6 +47,8 @@ const saveRoomSettingsBtn = document.getElementById("save-room-settings-btn");
 const deleteRoomBtn = document.getElementById("delete-room-btn");
 const showEmergencyBtn = document.getElementById("show-emergency-btn");
 const hideEmergencyBtn = document.getElementById("hide-emergency-btn");
+const showSosCallBtn = document.getElementById("show-sos-call-btn");
+const hideSosCallBtn = document.getElementById("hide-sos-call-btn");
 const alarmBtn = document.getElementById("alarm-btn");
 const alarmPanelEl = document.getElementById("alarm-panel");
 const alarmTimeInput = document.getElementById("alarm-time-input");
@@ -97,6 +99,7 @@ let activeThreadChannel = null;
 let activeNotificationChannel = null;
 let typingActive = false;
 let emergencyScreenVisible = false;
+let sosCallVisible = false;
 let alarmPanelExpanded = false;
 let alarmScreenVisible = false;
 let homeScreenPanelExpanded = false;
@@ -423,6 +426,8 @@ async function setActiveRoom(roomId) {
   editContactsActionEl.href = `/control/contacts?room=${encodeURIComponent(roomId)}`;
   emergencyScreenVisible = false;
   updateEmergencyButtons();
+  sosCallVisible = false;
+  updateSosCallButtons();
   alarmPanelExpanded = false;
   alarmScreenVisible = false;
   updateAlarmPanel();
@@ -458,6 +463,25 @@ async function setActiveRoom(roomId) {
       if (payload?.time) homeScreenTimeInput.value = payload.time;
       if (payload?.date) homeScreenDateInput.value = payload.date;
       updateHomeScreenPanel();
+    })
+    // El actor también puede pasar a "llamada SOS activa" por su cuenta,
+    // completando de verdad el slider "Emergencia SOS" (ver
+    // wireEmergencySliders en emergencyOverlay.js) — sincroniza el tile
+    // y apaga "Pantalla de apagado/SOS" si seguía marcada como activa
+    .on("broadcast", { event: "sos_call_show" }, () => {
+      sosCallVisible = true;
+      updateSosCallButtons();
+      if (emergencyScreenVisible) {
+        emergencyScreenVisible = false;
+        updateEmergencyButtons();
+      }
+    })
+    // El actor puede colgar él mismo tocando el botón rojo — si lo hace
+    // antes de que el director la cierre acá, este evento resincroniza
+    // el tile para que no quede mostrando "Cerrar llamada SOS"
+    .on("broadcast", { event: "sos_call_hide" }, () => {
+      sosCallVisible = false;
+      updateSosCallButtons();
     })
     .subscribe();
 
@@ -644,6 +668,8 @@ deleteRoomBtn.addEventListener("click", async () => {
   updateEmptyState(false);
   emergencyScreenVisible = false;
   updateEmergencyButtons();
+  sosCallVisible = false;
+  updateSosCallButtons();
   alarmPanelExpanded = false;
   alarmScreenVisible = false;
   updateAlarmPanel();
@@ -813,12 +839,53 @@ showEmergencyBtn.addEventListener("click", () => {
   activeNotificationChannel?.send({ type: "broadcast", event: "emergency_screen_show", payload: {} });
   emergencyScreenVisible = true;
   updateEmergencyButtons();
+  // son pantallas alternativas de la misma escena (deslizar → llamando) —
+  // no tiene sentido ver las dos al mismo tiempo
+  if (sosCallVisible) {
+    activeNotificationChannel?.send({ type: "broadcast", event: "sos_call_hide", payload: {} });
+    sosCallVisible = false;
+    updateSosCallButtons();
+  }
 });
 
 hideEmergencyBtn.addEventListener("click", () => {
   activeNotificationChannel?.send({ type: "broadcast", event: "emergency_screen_hide", payload: {} });
   emergencyScreenVisible = false;
   updateEmergencyButtons();
+});
+
+// "Llamada SOS activa": pantalla alternativa a la de apagado/SOS — simula
+// el resultado de completar el slider "Emergencia SOS" (la llamada al
+// 112 ya en curso). Mismo canal por-dispositivo, mismo criterio de
+// solo-el-director-la-cierra que apagado/SOS (el actor tiene que seguir
+// actuando la escena, no interrumpirla tocando la pantalla). El fondo
+// desenfocado reusa la foto de la pantalla de inicio (si hay una
+// persistida) para no pedir una imagen aparte
+function updateSosCallButtons() {
+  showSosCallBtn.classList.toggle("hidden", sosCallVisible);
+  hideSosCallBtn.classList.toggle("hidden", !sosCallVisible);
+}
+
+showSosCallBtn.addEventListener("click", () => {
+  const room = activeRoomId ? rooms.get(activeRoomId) : null;
+  activeNotificationChannel?.send({
+    type: "broadcast",
+    event: "sos_call_show",
+    payload: { backgroundUrl: room?.home_screen_bg_url || null },
+  });
+  sosCallVisible = true;
+  updateSosCallButtons();
+  if (emergencyScreenVisible) {
+    activeNotificationChannel?.send({ type: "broadcast", event: "emergency_screen_hide", payload: {} });
+    emergencyScreenVisible = false;
+    updateEmergencyButtons();
+  }
+});
+
+hideSosCallBtn.addEventListener("click", () => {
+  activeNotificationChannel?.send({ type: "broadcast", event: "sos_call_hide", payload: {} });
+  sosCallVisible = false;
+  updateSosCallButtons();
 });
 
 // Pantalla de alarma: a diferencia de la de apagado/SOS, el actor SÍ
