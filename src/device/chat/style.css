@@ -722,6 +722,12 @@ body.home-screen-active #notification-banner { z-index: 65; }
   padding: max(env(safe-area-inset-top, 0px), 50px) 24px max(env(safe-area-inset-bottom, 0px), 40px);
   color: #fff;
   overflow: hidden;
+  /* mismo color que el fallback de .sos-call-bg — de base, no solo en
+     esa capa: filter:blur() en .sos-call-bg desvanece sus propios bordes
+     hacia transparente (el kernel del blur muestrea "afuera" de su caja,
+     donde no hay nada), y sin un fondo opaco acá atrás esos bordes
+     dejaban ver lo que hubiera detrás del overlay en vez de fundirse */
+  background: #1a1512;
 }
 
 #sos-call-overlay.hidden { display: none; }

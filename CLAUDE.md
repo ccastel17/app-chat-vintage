@@ -256,7 +256,12 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     de `/control` — para que nunca queden las dos encendidas a la vez
     por accidente. El fondo desenfocado reusa la misma foto que la
     pantalla de inicio (`rooms.home_screen_bg_url`, si el director ya
-    subió una) en vez de pedir una imagen aparte
+    subió una) en vez de pedir una imagen aparte. `#sos-call-overlay`
+    tiene su propio `background: #1a1512` de base (mismo color que el
+    fallback de `.sos-call-bg`) — sin eso, el `filter: blur()` de
+    `.sos-call-bg` desvanecía sus propios bordes hacia transparente (el
+    kernel del blur muestrea "afuera" de su caja) y dejaba ver lo que
+    hubiera detrás del overlay en un anillo fino en el borde
   - **"⏰ Simular despertador"**: pantalla de alarma sonando (tipo lock
     screen de iOS — ícono + hora grande + "Posponer"/"Detener"), sobre lo
     que sea que el actor esté mirando, mismo canal y alcance que la de
