@@ -483,6 +483,84 @@ button {
 
 #home-screen-date-input { width: 130px; }
 
+#missed-calls-section {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#missed-calls-label { font-size: 11px; color: #d6c3e8; }
+
+#missed-calls-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#missed-calls-list:empty { display: none; }
+
+.missed-call-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #1a1f26;
+  border: 1px solid rgba(180, 148, 212, 0.35);
+  font-size: 12.5px;
+  color: #e9edf1;
+}
+
+.missed-call-entry-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #2a2f38 center / cover no-repeat;
+  flex-shrink: 0;
+}
+
+.missed-call-entry-name { flex: 1; }
+.missed-call-entry-time { color: #d6c3e8; }
+
+.missed-call-entry-remove-btn {
+  background: none;
+  border: none;
+  color: #d6c3e8;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 2px;
+}
+.missed-call-entry-remove-btn:hover { color: #fff; }
+
+#missed-call-add-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#missed-call-contact-select,
+#missed-call-time-input {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(180, 148, 212, 0.35);
+  background: #1a1f26;
+  color: #e9edf1;
+  font-size: 13px;
+}
+
+#missed-call-add-btn {
+  background: rgba(163, 124, 199, 0.25);
+  border: 1px solid rgba(180, 148, 212, 0.35);
+  color: #e9edf1;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+#missed-call-add-btn:hover { background: rgba(163, 124, 199, 0.4); }
+
 #home-screen-activate-btn { background: #a37cc7; color: #1a1024; font-weight: 600; }
 
 #home-screen-activate-btn.hidden,

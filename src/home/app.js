@@ -53,7 +53,8 @@ async function loadActors() {
       <span class="actor-url"></span>
       <div class="actor-actions">
         <button type="button" class="copy-link-btn">📋 Copiar link</button>
-        <a class="open-link" target="_blank" rel="noopener">Abrir →</a>
+        <a class="open-link" target="_blank" rel="noopener">Ir al chat</a>
+        <a class="gallery-link" target="_blank" rel="noopener">👀 Ver pantallas</a>
       </div>
     `;
     const avatarEl = card.querySelector(".actor-avatar");
@@ -65,6 +66,7 @@ async function loadActors() {
     card.querySelector(".actor-name").textContent = name;
     card.querySelector(".actor-url").textContent = `/device/${room.room_id}`;
     card.querySelector(".open-link").href = url;
+    card.querySelector(".gallery-link").href = `${location.origin}/gallery/${room.room_id}`;
     card.querySelector(".copy-link-btn").addEventListener("click", (e) => copyLink(url, e.currentTarget));
     actorsGrid.appendChild(card);
   });

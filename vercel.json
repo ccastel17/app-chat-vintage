@@ -5,6 +5,13 @@
     { "source": "/icons/:path*", "destination": "/public/icons/:path*" },
 
     { "source": "/shared/:path*", "destination": "/src/shared/:path*" },
+    { "source": "/screens/:path*", "destination": "/public/screens/:path*" },
+
+    { "source": "/gallery/style.css", "destination": "/src/gallery/style.css" },
+    { "source": "/gallery/app.js", "destination": "/src/gallery/app.js" },
+    { "source": "/gallery/all.js", "destination": "/src/gallery/all.js" },
+    { "source": "/gallery", "destination": "/src/gallery/all.html" },
+    { "source": "/gallery/:roomId", "destination": "/src/gallery/index.html" },
 
     { "source": "/control/contacts/style.css", "destination": "/src/control/contacts/style.css" },
     { "source": "/control/contacts/app.js", "destination": "/src/control/contacts/app.js" },

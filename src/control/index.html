@@ -180,6 +180,21 @@
             <label id="home-screen-date-label">Fecha
               <input id="home-screen-date-input" type="text" placeholder="Lun ago 3" />
             </label>
+
+            <!-- Stack de notificaciones de "llamada perdida" sobre la
+                 pantalla de inicio — opcional, se arma antes de activar.
+                 Usa la lista de contactos del dispositivo activo (mismo
+                 origen que #quick-notify-select) para nombre+foto -->
+            <div id="missed-calls-section">
+              <span id="missed-calls-label">Llamadas perdidas (opcional)</span>
+              <div id="missed-calls-list"></div>
+              <div id="missed-call-add-row">
+                <select id="missed-call-contact-select"></select>
+                <input id="missed-call-time-input" type="time" />
+                <button id="missed-call-add-btn" type="button">+ Agregar</button>
+              </div>
+            </div>
+
             <button id="home-screen-activate-btn" type="button">Activar pantalla</button>
             <button id="home-screen-deactivate-btn" type="button" class="hidden danger-btn">Cerrar pantalla</button>
             <button id="home-screen-help-btn" type="button" class="home-screen-help-btn">❔ Cómo poner una hora falsa en el iPhone</button>

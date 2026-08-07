@@ -7,13 +7,14 @@
 const DISMISS_DISTANCE = 90; // px que hay que arrastrar hacia arriba para que cierre
 const DISMISS_VELOCITY = 0.6; // px/ms — un swipe rápido y corto también cierra
 
-export function showHomeScreenOverlay(el, { backgroundUrl, time, date } = {}) {
+export function showHomeScreenOverlay(el, { backgroundUrl, time, date, missedCalls } = {}) {
   const bgEl = el.querySelector(".home-screen-bg");
   const timeEl = el.querySelector("#home-screen-time");
   const dateEl = el.querySelector("#home-screen-date");
   if (bgEl) bgEl.style.backgroundImage = backgroundUrl ? `url("${backgroundUrl}")` : "none";
   if (timeEl) timeEl.textContent = time || "";
   if (dateEl) dateEl.textContent = date || "";
+  renderMissedCalls(el, missedCalls);
   el.classList.remove("hidden");
   resetDrag(el);
   // el banner de notificación (z-index 30) queda por debajo de esta pantalla
@@ -26,6 +27,43 @@ export function hideHomeScreenOverlay(el) {
   el.classList.add("hidden");
   resetDrag(el);
   document.body.classList.remove("home-screen-active");
+}
+
+// Stack de notificaciones de "llamada perdida" sobre la lock screen —
+// mismo criterio visual que el resto de los overlays (sin sonido, puramente
+// visual). No tiene tile propio en /control todavía: por ahora se dispara
+// pasando `missedCalls` en el payload de `home_screen_show` (ver script de
+// capturas), no hay UI de director para armarlo en vivo.
+function renderMissedCalls(el, missedCalls) {
+  const container = el.querySelector(".home-screen-notifications");
+  if (!container) return;
+  container.innerHTML = "";
+  if (!missedCalls || missedCalls.length === 0) {
+    container.classList.add("hidden");
+    return;
+  }
+  container.classList.remove("hidden");
+  missedCalls.forEach(({ name, avatarUrl, time }) => {
+    const card = document.createElement("div");
+    card.className = "missed-call-card";
+    card.innerHTML = `
+      <span class="missed-call-avatar" style="${avatarUrl ? `background-image:url('${avatarUrl}')` : ""}">
+        <svg class="missed-call-badge" viewBox="0 0 24 24" width="13" height="13" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="12" fill="#ff453a" />
+          <path
+            d="M7.3 6.4c.4-.4 1-.4 1.3 0l1.6 1.9c.3.4.3.9 0 1.3l-.8.9c.4 1 1.6 2.2 2.6 2.6l.9-.8c.4-.3.9-.3 1.3 0l1.9 1.6c.4.4.4 1 0 1.3l-1 1c-.5.5-1.3.7-2 .4-2-.7-4.4-3-5.1-5.1-.3-.7-.1-1.5.4-2l1-1Z"
+            fill="#fff"
+          />
+        </svg>
+      </span>
+      <span class="missed-call-text">
+        <span class="missed-call-name">${name || ""}</span>
+        <span class="missed-call-sub">Llamada perdida</span>
+      </span>
+      <span class="missed-call-time">${time || ""}</span>
+    `;
+    container.appendChild(card);
+  });
 }
 
 function resetDrag(el) {

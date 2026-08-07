@@ -88,6 +88,34 @@ h1 {
 
 .section-hint { font-size: 13.5px; color: var(--muted); }
 
+/* ---------- acceso a la galería completa ---------- */
+.gallery-access-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 22px 24px;
+}
+
+.cta-secondary {
+  flex-shrink: 0;
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 16px;
+  white-space: nowrap;
+}
+
+.cta-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
 /* ---------- actores ---------- */
 .actors-grid {
   display: grid;
@@ -141,6 +169,7 @@ h1 {
 
 .actor-actions {
   display: flex;
+  flex-direction: column;
   gap: 6px;
   margin-top: 4px;
   width: 100%;
@@ -148,7 +177,7 @@ h1 {
 
 .actor-actions button,
 .actor-actions a {
-  flex: 1;
+  width: 100%;
   font-size: 12px;
   padding: 8px 6px;
   border-radius: 7px;
@@ -172,6 +201,14 @@ h1 {
 }
 
 .open-link:hover { border-color: var(--accent); color: var(--accent); }
+
+.gallery-link {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.gallery-link:hover { border-color: var(--accent); color: var(--accent); }
 
 /* ---------- cómo funciona ---------- */
 .how-steps {

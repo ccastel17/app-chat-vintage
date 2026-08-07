@@ -41,11 +41,16 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
 
 ## Arquitectura de rutas
 - `/` → landing del proyecto (`src/home/`): copy de qué es, botón grande a
-  `/control`, grilla de accesos por actor ya creado con botón **"Copiar
-  link"** (clipboard, para pasarle la URL real de instalación al actor
-  por WhatsApp/lo que sea) y "Abrir →" (para que el director lo pruebe),
-  y un resumen de "cómo funciona". Pensada para compartir con quien va a
-  probar el producto
+  `/control`, un módulo destacado "Pantallas simuladas" (banda simple con
+  link "👀 Ver galería completa →" a `/gallery`, ver abajo — se probó
+  primero como ticker horizontal animado y se descartó, no convencía
+  visualmente; este es más discreto, sin animación), grilla de accesos
+  por actor ya creado con botón **"Copiar link"** (clipboard, para
+  pasarle la URL real de instalación al actor por WhatsApp/lo que sea),
+  "Ir al chat" (para que el director lo pruebe) y "👀 Ver pantallas" (link a
+  `/gallery/[roomId]`, ver abajo) — los tres en columna, uno debajo del
+  otro, y un resumen de "cómo funciona". Pensada para compartir con quien
+  va a probar el producto
 - `/control` → mensajería en vivo del director. Layout de 3 columnas:
   lista de dispositivos (izquierda, fija) — `#chat-col` (centro, flexible:
   hilo + composer) — `#actions-col` (derecha, fija, siempre visible: la
@@ -369,6 +374,21 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
     `#home-screen-help-modal` (mismo texto que antes vivía en un Artifact
     externo, ahora adentro de la app — un link fuera de la herramienta no
     era robusto para operar en pleno rodaje sin conexión)
+  - **Llamadas perdidas sobre la pantalla de inicio**: stack opcional de
+    tarjetas estilo notificación nativa de iOS (foto+nombre+"Llamada
+    perdida"+hora), apiladas debajo de la hora grande
+    (`.home-screen-notifications` en `src/device/style.css` y
+    `chat/style.css`, render en `showHomeScreenOverlay()` →
+    `renderMissedCalls()`, `src/shared/homeScreenOverlay.js`). Se arma
+    ANTES de activar la pantalla, en una sub-sección propia dentro de
+    `#home-screen-panel`: un desplegable con los contactos del
+    dispositivo activo (mismo origen que "Notificar de otro contacto") +
+    hora + "➕ Agregar", que va sumando tarjetas a una lista editable
+    (cada una con su ✕ para sacarla). Al activar la pantalla, esa lista
+    viaja como `missedCalls` dentro del mismo payload de
+    `home_screen_show` — no es un evento aparte. La lista se vacía sola
+    al cambiar de dispositivo (mismo criterio que el resto de los
+    paneles colapsables)
   - **"🎙️ nota de voz"**: sin audio real — mismo criterio que todos los
     overlays del proyecto. Se elige con un toggle 💬/🎙️ al lado del
     campo de mensaje (en el composer principal y en el de "Notificar de
@@ -425,6 +445,28 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
   - "🔗 + Linkear con otro actor" crea DOS conversaciones (una en la lista
     de cada dispositivo) que comparten `thread_id`
   - Responsive, mismo criterio que `/control`
+- `/gallery` → **galería completa**: todos los actores existentes (fetch
+  a `rooms`, sin hardcodear cuáles), cada uno con el mismo set de 7
+  pantallas genéricas que `/gallery/[roomId]` (mismo manifest `SCREENS`,
+  duplicado en `src/gallery/all.js` — no hay una única fuente compartida
+  todavía), agrupados en secciones con header avatar+nombre y grilla de 3
+  columnas (`src/gallery/all.html` + `all.js`, comparte `style.css` con
+  `/gallery/[roomId]`). Actores sin capturas generadas todavía caen en el
+  placeholder normal "Sin captura todavía" por thumbnail, sección por
+  sección — no rompe el layout. Reachable desde "👀 Ver galería completa
+  →" en la home, no está linkeada desde ningún otro lado
+- `/gallery/[roomId]` → galería simple de pantallas simuladas de
+  referencia para el rodaje (`src/gallery/`), linkeada desde "👀 Ver
+  pantallas" en la home. Header con avatar+nombre del actor (fetch a
+  `rooms`) + grilla de 3 columnas, un thumbnail por pantalla simulada
+  (llamada entrante, videollamada timbre/conectada, apagado/SOS, llamada
+  SOS activa, despertador, pantalla de inicio — manifest hardcodeado en
+  `src/gallery/app.js`) con su nombre debajo. Las imágenes son capturas
+  **estáticas** en `public/screens/[roomId]/*.png` — no se generan en
+  vivo, hay que regenerarlas y copiarlas a mano si cambia el avatar o el
+  fondo del actor. Si al actor no le corresponden capturas todavía
+  (`onerror` de la imagen), cada thumbnail cae a un placeholder "Sin
+  captura todavía" sin romper el layout ni el link de vuelta a la home
 - `/device/[roomId]` → **lista de chats** del actor (home, como WhatsApp)
   - Cada fila: avatar, nombre de contacto, preview del último mensaje
   - Tocar una fila navega a `/device/[roomId]/chat/[conversationId]`
@@ -835,7 +877,7 @@ swipe) y reenvía el `_hide` de vuelta para que `/control` se resincronice
   `/control/contacts` ("💬 Ver chat")
 - Landing en `/` (`src/home/`) para compartir con quien prueba el
   producto: copy, CTA a `/control`, grilla de accesos a cada actor con
-  botón "Copiar link" (URL real de instalación) y "Abrir →", y "cómo
+  botón "Copiar link" (URL real de instalación) y "Ir al chat", y "cómo
   funciona" resumido
 - "Nombre del actor" (`rooms.label`): se había sacado del todo por
   parecer redundante, pero sin él no había forma de identificar un
@@ -1023,5 +1065,38 @@ swipe) y reenvía el `_hide` de vuelta para que `/control` se resincronice
   videollamada y banner de notificación — todo correcto, sin errores de
   consola. No confirma manifest/instalación PWA real en un Android
   físico, solo layout/render
+- Llamadas perdidas sobre la pantalla de inicio (director arma el stack
+  antes de activarla, viaja dentro de `home_screen_show`) — ver detalle
+  en `/control` (Arquitectura de rutas). Probado con Playwright: agregar
+  y quitar entradas antes de activar, aparecen correctamente apiladas en
+  `/device`, sin errores de consola
+- Home (`src/home/`): los 3 botones de cada tarjeta de actor ("Copiar
+  link"/"Ir al chat"/"Ver pantallas") pasaron de fila+fila suelta a
+  columna única — con "Ver pantallas" sumado (ver más abajo) ya no
+  entraban cómodos dos arriba y uno abajo
+- Galería simple por actor (`/gallery/:roomId`, `src/gallery/`): botón
+  "👀 Ver pantallas" en cada tarjeta de la home, grilla de 3 columnas con
+  capturas estáticas de las pantallas simuladas (`public/screens/
+  <roomId>/*.png`, no se generan en vivo) y su nombre debajo; fallback
+  "Sin captura todavía" por thumbnail si el actor no tiene capturas
+  generadas. Ver `src/gallery/app.js` para el manifest de pantallas
+- Módulo "Pantallas simuladas" en la home (banda simple con "👀 Ver
+  galería completa →") y página `/gallery` (todos los actores, cada uno
+  con sus 7 pantallas genéricas) — ver detalle de ambos en `/` y
+  `/gallery` (Arquitectura de rutas). Se probó primero como ticker
+  horizontal animado y se descartó a pedido explícito ("no me gustó"),
+  reemplazado por este acceso simple
+- **Todas las capturas se borraron** (`public/screens/` y `Capturas
+  pantallas simuladas/`, esta última fuera del repo) a pedido explícito,
+  para regenerarlas de cero una vez que se suban fotos de fondo a los
+  actores — hasta entonces, `/gallery` y `/gallery/[roomId]` muestran el
+  placeholder "Sin captura todavía" en cada thumbnail. El script Playwright
+  ad-hoc que las generaba (dispara cada pantalla simulada desde `/control`
+  y captura `/device` en resoluciones iPhone 16 / Galaxy S24 / iPad
+  (gen 11), con una barra de estado falsa inyectada en las pantallas sin
+  reloj propio) no quedó guardado en el repo — hay que rehacerlo cuando se
+  regeneren
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
-  placeholder por diseño final, probar instalación real en Android
+  placeholder por diseño final, probar instalación real en Android,
+  regenerar las capturas de `/gallery` una vez que los actores tengan
+  fotos de fondo

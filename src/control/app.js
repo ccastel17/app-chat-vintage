@@ -65,6 +65,10 @@ const homeScreenDeactivateBtn = document.getElementById("home-screen-deactivate-
 const homeScreenHelpBtn = document.getElementById("home-screen-help-btn");
 const homeScreenHelpModalEl = document.getElementById("home-screen-help-modal");
 const closeHomeScreenHelpBtn = document.getElementById("close-home-screen-help-btn");
+const missedCallsListEl = document.getElementById("missed-calls-list");
+const missedCallContactSelect = document.getElementById("missed-call-contact-select");
+const missedCallTimeInput = document.getElementById("missed-call-time-input");
+const missedCallAddBtn = document.getElementById("missed-call-add-btn");
 
 const emptyStateEl = document.getElementById("empty-state");
 const actionsColEl = document.getElementById("actions-col");
@@ -104,6 +108,7 @@ let alarmPanelExpanded = false;
 let alarmScreenVisible = false;
 let homeScreenPanelExpanded = false;
 let homeScreenVisible = false;
+let missedCallEntries = []; // [{ name, avatarUrl, time }] — se arma antes de activar la pantalla de inicio
 
 const rooms = new Map(); // room_id -> { room_id, label }
 const onlineRoomIds = new Set();
@@ -284,6 +289,7 @@ function renderConversationSelect() {
   if (items.length === 0) {
     speakerControlEl.classList.add("hidden");
     renderQuickNotifySelect();
+    renderMissedCallContactSelect();
     return;
   }
   speakerControlEl.classList.remove("hidden");
@@ -296,7 +302,52 @@ function renderConversationSelect() {
   });
   if (activeConversationId) conversationSelect.value = activeConversationId;
   renderQuickNotifySelect();
+  renderMissedCallContactSelect();
 }
+
+// Select de "a quién agregar como llamada perdida" — mismos contactos que
+// el dispositivo activo tiene en su lista (no excluye la conversación
+// activa, a diferencia de #quick-notify-select: acá sí tiene sentido
+// elegir el mismo contacto con el que se está hablando)
+function renderMissedCallContactSelect() {
+  const items = [...conversations.values()];
+  missedCallContactSelect.innerHTML = "";
+  items.forEach((conversation) => {
+    const opt = document.createElement("option");
+    opt.value = conversation.id;
+    opt.textContent = conversation.contact_name;
+    missedCallContactSelect.appendChild(opt);
+  });
+}
+
+function renderMissedCallsList() {
+  missedCallsListEl.innerHTML = "";
+  missedCallEntries.forEach((entry, index) => {
+    const row = document.createElement("div");
+    row.className = "missed-call-entry";
+    row.innerHTML = `
+      <span class="missed-call-entry-avatar" style="${entry.avatarUrl ? `background-image:url('${entry.avatarUrl}')` : ""}"></span>
+      <span class="missed-call-entry-name">${entry.name}</span>
+      <span class="missed-call-entry-time">${entry.time}</span>
+      <button type="button" class="missed-call-entry-remove-btn" aria-label="Quitar">✕</button>
+    `;
+    row.querySelector(".missed-call-entry-remove-btn").addEventListener("click", () => {
+      missedCallEntries.splice(index, 1);
+      renderMissedCallsList();
+    });
+    missedCallsListEl.appendChild(row);
+  });
+}
+
+missedCallAddBtn.addEventListener("click", () => {
+  const conversation = conversations.get(missedCallContactSelect.value);
+  if (!conversation) return;
+  const now = new Date();
+  const time =
+    missedCallTimeInput.value || `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  missedCallEntries.push({ name: conversation.contact_name, avatarUrl: conversation.avatar_url, time });
+  renderMissedCallsList();
+});
 
 // Para notificar "de otro contacto" sin abandonar la conversación activa:
 // cualquier otro chat de este mismo dispositivo, simulado o linkeado
@@ -433,6 +484,8 @@ async function setActiveRoom(roomId) {
   updateAlarmPanel();
   homeScreenPanelExpanded = false;
   homeScreenVisible = false;
+  missedCallEntries = [];
+  renderMissedCallsList();
   fillHomeScreenPanel(roomId);
   updateHomeScreenPanel();
   renderDeviceList();
@@ -675,6 +728,8 @@ deleteRoomBtn.addEventListener("click", async () => {
   updateAlarmPanel();
   homeScreenPanelExpanded = false;
   homeScreenVisible = false;
+  missedCallEntries = [];
+  renderMissedCallsList();
   updateHomeScreenPanel();
   speakerControlEl.classList.add("hidden");
   quickNotifyToggleBtn.classList.add("hidden");
@@ -964,6 +1019,7 @@ homeScreenActivateBtn.addEventListener("click", () => {
       backgroundUrl: room?.home_screen_bg_url || null,
       time: homeScreenTimeInput.value || "",
       date: homeScreenDateInput.value || "",
+      missedCalls: missedCallEntries.slice(),
     },
   });
   homeScreenVisible = true;

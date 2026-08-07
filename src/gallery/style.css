@@ -1,0 +1,117 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0b0f14;
+  --surface: #12161c;
+  --ink: #e9edf1;
+  --muted: #7d8792;
+  --line: #1f242b;
+  --accent: #2f6fed;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+a { color: var(--accent); }
+
+.page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px 24px 80px;
+}
+
+.back-link {
+  display: inline-block;
+  font-size: 13px;
+  text-decoration: none;
+  margin-bottom: 20px;
+}
+
+.gallery-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.empty { color: var(--muted); font-size: 14px; }
+
+.actor-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--accent) center / cover no-repeat;
+  color: white;
+  font-weight: 700;
+  font-size: 19px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gallery-header h1 { font-size: 22px; }
+.gallery-hint { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
+
+/* ---------- /gallery (todas las capturas, agrupadas por actor) ---------- */
+.actor-group { margin-top: 36px; }
+.actor-group:first-child { margin-top: 0; }
+
+.actor-group-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.actor-group-avatar { width: 36px; height: 36px; font-size: 14px; }
+.actor-group-header h2 { font-size: 18px; }
+
+.thumbs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.thumb-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.thumb-frame {
+  aspect-ratio: 9 / 19.5;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s;
+}
+
+.thumb-card:hover .thumb-frame { border-color: var(--accent); }
+
+.thumb-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumb-missing { color: var(--muted); font-size: 11.5px; text-align: center; padding: 0 10px; }
+
+.thumb-label { font-size: 12.5px; text-align: center; }
+
+@media (max-width: 560px) {
+  .thumbs-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .thumb-label { font-size: 11px; }
+}
