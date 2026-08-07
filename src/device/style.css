@@ -22,6 +22,13 @@ html, body {
 }
 
 #list-root {
+  /* position:fixed + top:--app-offset-top — mismo fix que #chat-root en
+     src/device/chat/style.css (ver comentario ahí), para consistencia
+     entre lista y chat aunque acá no haya composer de texto */
+  position: fixed;
+  top: var(--app-offset-top, 0px);
+  left: 0;
+  right: 0;
   display: flex;
   flex-direction: column;
   height: 100vh;

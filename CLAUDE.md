@@ -453,8 +453,11 @@ presión de tiempo de rodaje, e instalable como app en los dispositivos.
   columnas (`src/gallery/all.html` + `all.js`, comparte `style.css` con
   `/gallery/[roomId]`). Actores sin capturas generadas todavía caen en el
   placeholder normal "Sin captura todavía" por thumbnail, sección por
-  sección — no rompe el layout. Reachable desde "👀 Ver galería completa
-  →" en la home, no está linkeada desde ningún otro lado
+  sección — no rompe el layout. Los actores con capturas del "pedido de
+  rodaje" (`RODAJE_SCREENS_BY_ROOM` en `all.js` — hoy Genís y Paco) suman
+  una sub-sección "Capturas del rodaje" debajo de las 7 genéricas, mismas
+  imágenes que sirve `/screens/rodaje/*.png`. Reachable desde "👀 Ver
+  galería completa →" en la home, no está linkeada desde ningún otro lado
 - `/gallery/[roomId]` → galería simple de pantallas simuladas de
   referencia para el rodaje (`src/gallery/`), linkeada desde "👀 Ver
   pantallas" en la home. Header con avatar+nombre del actor (fetch a
@@ -803,10 +806,44 @@ swipe) y reenvía el `_hide` de vuelta para que `/control` se resincronice
   en standalone. Se agregó `interactive-widget=resizes-content` al
   viewport y un alto dinámico atado a `window.visualViewport` (variable
   `--app-height`, actualizada en cada resize del viewport visual) en vez
-  de depender solo de `dvh` — en `/device` y `/device/chat`. **Sin
-  confirmar en dispositivo real todavía** — si tampoco funciona, el
-  problema puede no tener solución vía CSS/HTML y haya que replantear el
-  layout (por ejemplo, sacar `black-translucent` o `viewport-fit=cover`)
+  de depender solo de `dvh` — en `/device` y `/device/chat`.
+  **Confirmado en dispositivo real que el teclado sí abre** con ese
+  cambio — pero apareció un bug nuevo, también confirmado en dispositivo
+  real: al enfocar el input, todo el contenido (`#chat-root`) saltaba
+  hacia arriba, dejando un hueco vacío enorme entre el composer y el
+  teclado. Causa: `--app-height` solo compensaba el ALTO del
+  `visualViewport`, pero iOS también puede desplazar su ORIGEN
+  (`visualViewport.offsetTop`) hacia abajo al enfocar un input, para
+  centrarlo sobre el teclado — sin mover el scroll del documento (que
+  `overflow:hidden` en `html`/`body` bloquea). `#chat-root` seguía
+  dibujado desde el origen del layout viewport (`position: static`), así
+  que ese desplazamiento del visual viewport lo dejaba fuera del área
+  realmente visible, como "empujado" hacia arriba. Fix: `#chat-root` (y
+  `#list-root` en `/device`) pasaron a `position: fixed` con
+  `top: var(--app-offset-top, 0px)`, variable actualizada en vivo desde
+  `visualViewport.offsetTop` (`resize` y `scroll` de `visualViewport`,
+  no solo `resize`) — mismo patrón en `device/app.js` y
+  `device/chat/app.js`. Los overlays de pantalla completa (banner,
+  visor de fotos, llamada entrante, etc.) son hijos de `#chat-root` en el
+  HTML pero mantienen su propio `position: fixed` con `inset: 0` —
+  siguen ancladas al viewport real (no a `#chat-root`) porque un
+  ancestro en `position: fixed` sin `transform`/`filter` no cambia el
+  containing block de sus descendientes `fixed`, confirmado sin
+  regresiones con Playwright en los overlays existentes. Igual que el
+  bug del teclado, el `visualViewport.offsetTop` no se puede reproducir
+  en Chromium/Playwright (es un comportamiento específico de WebKit) —
+  este fix sale del diagnóstico del síntoma reportado por el usuario en
+  un iPhone real. **Confirmado en dispositivo real que mejoró** ("quedó
+  mejor") — pero de paso reveló otro síntoma del mismo problema:
+  `#chat-header` también es `position: fixed`, pero con `top: 0` fijo (no
+  atado a `--app-offset-top` como `#chat-root`) — su containing block es
+  el viewport real, no `#chat-root` (un ancestro en `position: fixed`
+  sin `transform`/`filter` no cambia el containing block de sus
+  descendientes `fixed`, por spec), así que no lo arrastraba el fix de
+  `#chat-root`. Con el teclado abierto, `top: 0` quedaba por ENCIMA del
+  área realmente visible y el header directamente desaparecía de
+  pantalla (confirmado en dispositivo real). Mismo fix que `#chat-root`:
+  `top: var(--app-offset-top, 0px)` en vez de `top: 0`
 - `#device-composer` tenía `padding-top: 8px` pero `padding-bottom:
   max(env(safe-area-inset-bottom, 0px), 18px)` — asimétrico a propósito
   (pensado para el home indicator), pero se veía raro en dispositivos
@@ -814,6 +851,21 @@ swipe) y reenvía el `_hide` de vuelta para que `/control` se resincronice
   por default; en un iPhone con home indicator real, `env()` (~34px)
   sigue ganando por el `max()`, así que no se pierde la protección
   donde de verdad hace falta
+- **Composer rediseñado como barra flotante**, a pedido explícito tras el
+  fix del salto del input: antes era una barra recta de punta a punta
+  (`border-top`, ancho 100%, pegada al borde inferior); ahora es
+  `position: fixed`, con `left`/`right: 12px` (no toca los bordes de la
+  pantalla) y `bottom: max(env(safe-area-inset-bottom, 0px), 12px)`,
+  fondo + borde + `border-radius: 26px` — mismo lenguaje visual que
+  `.bottom-nav-item` en `/device` (fondo `--skin-surface` + borde
+  `--skin-line`, redondeado), más una sombra sutil para reforzar que
+  "flota" sobre el fondo. Al dejar de ser un item más del flujo de
+  `#chat-root`, `#messages` necesita que le digan cuánto espacio dejar
+  libre abajo — mismo patrón que `--header-height` (ResizeObserver sobre
+  `#device-composer` en `device/chat/app.js` → `--composer-height`,
+  usada en el `padding-bottom` de `#messages` junto con el mismo offset
+  `bottom` que tiene el composer). No se replicó en `/device` (la lista)
+  porque esa pantalla no tiene composer de texto
 
 ## No tocar sin avisar antes
 - El pipeline de Playwright + ffmpeg ya funciona de forma independiente.
@@ -1086,17 +1138,45 @@ swipe) y reenvía el `_hide` de vuelta para que `/control` se resincronice
   `/gallery` (Arquitectura de rutas). Se probó primero como ticker
   horizontal animado y se descartó a pedido explícito ("no me gustó"),
   reemplazado por este acceso simple
-- **Todas las capturas se borraron** (`public/screens/` y `Capturas
-  pantallas simuladas/`, esta última fuera del repo) a pedido explícito,
-  para regenerarlas de cero una vez que se suban fotos de fondo a los
-  actores — hasta entonces, `/gallery` y `/gallery/[roomId]` muestran el
-  placeholder "Sin captura todavía" en cada thumbnail. El script Playwright
-  ad-hoc que las generaba (dispara cada pantalla simulada desde `/control`
-  y captura `/device` en resoluciones iPhone 16 / Galaxy S24 / iPad
-  (gen 11), con una barra de estado falsa inyectada en las pantallas sin
-  reloj propio) no quedó guardado en el repo — hay que rehacerlo cuando se
-  regeneren
+- Las 10 capturas del "pedido de rodaje" se regeneraron una vez que los 4
+  actores tuvieron `home_screen_bg_url` (antes solo Paco lo tenía, así que
+  la pantalla de inicio de Genís salía en negro liso — ya no). Ajustes de
+  esta vuelta, a pedido explícito:
+  - **"Interfaz de cámara" (ítems 1 y 9)**: dejó de ser un PNG
+    transparente — ahora es un mockup con los mismos controles simulados
+    que `/camera-test` (cerrar, flash, galería, obturador, flip, ver
+    `CAMERA_MOCK_HTML` en el script) sobre un fondo verde chroma (`#00b140`)
+    con los 5 marcadores de tracking (mismo criterio visual que la
+    videollamada conectada). Los marcadores de las esquinas están corridos
+    hacia adentro (70px/90px en vez de 20px) para no quedar tapados por los
+    botones de control — mismo tipo de choque que ya había pasado con la
+    barra de estado falsa sobre los marcadores de la videollamada
+  - **Sin castellano argentino**: el texto de prueba que se usaba para
+    dos capturas ("Che, ¿ya saliste para acá?") se sacó — la ficción
+    pasa en España. En su lugar: el ítem 2 (notificación en pantalla de
+    inicio) manda un mensaje con `content` vacío a propósito (el preview
+    del banner queda en blanco) y el ítem 8 (nota de audio) ya no manda
+    ningún mensaje de texto antes de la nota de voz
+  - El composer real bloquea el envío si el contenido queda vacío después
+    de `trim()` (`if (!conversation || !content) return;` en `sendBtn` de
+    `control/app.js`) — para lograr el banner con preview en blanco en el
+    ítem 2, el script de captura repite a mano el mismo insert +
+    broadcast que hace ese botón, sin pasar por esa validación (solo
+    tiene sentido para una captura, no cambia el comportamiento real de
+    la app)
+  - Las 10 quedaron copiadas en `public/screens/rodaje/*.png` (servidas)
+    y sumadas a `/gallery` como sub-sección "Capturas del rodaje" por
+    actor (ver detalle en `/gallery`, Arquitectura de rutas) — antes
+    estaban generadas pero no aparecían en ninguna galería navegable
+  - El script Playwright ad-hoc que las genera (dispara cada pantalla
+    desde `/control` y captura `/device` en iPhone 16 / iPad gen 11, con
+    barra de estado falsa donde no hay reloj propio) sigue sin guardarse
+    en el repo — hay que rehacerlo si se vuelven a regenerar
+- Las 7 capturas genéricas de Genís y Paco (`public/screens/[roomId]/`,
+  las de `/gallery/[roomId]` y la sección superior de `/gallery`) se
+  regeneraron también — mismo criterio que las del rodaje: fecha actual,
+  llamante real (`🔗 Genis`/`🔗 Paco`, no el default alfabético), barra de
+  estado falsa en las pantallas sin reloj propio. Pie y Xusa siguen sin
+  este set (nunca lo tuvieron, no se generó por pedido explícito)
 - Pendiente: integración Playwright/ffmpeg (fase 4), reemplazar íconos
-  placeholder por diseño final, probar instalación real en Android,
-  regenerar las capturas de `/gallery` una vez que los actores tengan
-  fotos de fondo
+  placeholder por diseño final, probar instalación real en Android

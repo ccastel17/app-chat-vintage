@@ -19,12 +19,24 @@ if (cachedSkin) applySkinVars(document.documentElement, cachedSkin);
 // apple-mobile-web-app-status-bar-style=black-translucent puede quedar
 // mal calculado y no reaccionar bien a que se abra el teclado. Con
 // visualViewport el alto siempre refleja el área realmente visible.
+//
+// Eso solo no alcanza: al enfocar el input, iOS puede desplazar el
+// visualViewport hacia abajo (offsetTop > 0) para centrar el input sobre
+// el teclado, SIN mover el scroll del documento (bloqueado por
+// overflow:hidden en html/body). #chat-root seguía dibujado desde el
+// origen del layout viewport, así que quedaba visualmente "empujado"
+// hacia arriba fuera del área realmente visible, dejando un hueco vacío
+// entre el composer y el teclado (bug reportado en dispositivo real).
+// --app-offset-top compensa ese corrimiento — #chat-root pasa a ser
+// position:fixed con ese offset en vez de quedar en el flujo normal.
 if (window.visualViewport) {
   const setAppHeight = () => {
     document.documentElement.style.setProperty("--app-height", `${window.visualViewport.height}px`);
+    document.documentElement.style.setProperty("--app-offset-top", `${window.visualViewport.offsetTop}px`);
   };
   setAppHeight();
   window.visualViewport.addEventListener("resize", setAppHeight);
+  window.visualViewport.addEventListener("scroll", setAppHeight);
 }
 
 // #chat-header es position:fixed (para que no se mueva si iOS scrollea la
@@ -37,6 +49,16 @@ if (window.ResizeObserver) {
     // incluido, que es lo que #messages tiene que dejar libre arriba
     document.documentElement.style.setProperty("--header-height", `${chatHeaderEl.offsetHeight}px`);
   }).observe(chatHeaderEl);
+}
+
+// Mismo criterio que el header: #device-composer es una barra flotante
+// position:fixed (ya no un item más del flujo de #chat-root), así que
+// #messages necesita que le digamos cuánto espacio libre dejar abajo
+const deviceComposerEl = document.getElementById("device-composer");
+if (window.ResizeObserver) {
+  new ResizeObserver(() => {
+    document.documentElement.style.setProperty("--composer-height", `${deviceComposerEl.offsetHeight}px`);
+  }).observe(deviceComposerEl);
 }
 
 const backLink = document.getElementById("back-link");

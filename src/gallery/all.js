@@ -1,8 +1,10 @@
 // "Ver galería completa" desde la home — todos los actores existentes,
 // cada uno con el mismo set de 7 pantallas genéricas que usa
-// /gallery/[roomId] (mismo manifest SCREENS, ver src/gallery/app.js).
-// Actores sin capturas generadas todavía caen en el placeholder normal
-// "Sin captura todavía" por thumbnail, no rompen el layout.
+// /gallery/[roomId] (mismo manifest SCREENS, ver src/gallery/app.js) y,
+// si tiene, sus capturas narrativas del "pedido de rodaje"
+// (RODAJE_SCREENS_BY_ROOM, ver /screens/rodaje/*.png) en una sub-sección
+// aparte. Actores sin capturas generadas todavía caen en el placeholder
+// normal "Sin captura todavía" por thumbnail, no rompen el layout.
 import { supabase } from "../shared/supabaseClient.js";
 
 const SCREENS = [
@@ -15,14 +17,31 @@ const SCREENS = [
   { file: "07-pantalla-inicio.png", label: "Pantalla de inicio" },
 ];
 
+// Curado a mano por actor — no todos tienen capturas narrativas
+const RODAJE_SCREENS_BY_ROOM = {
+  genis: [
+    { file: "01-genis-interfaz-camara.png", label: "Interfaz de cámara" },
+    { file: "03-genis-videollamada-croma.png", label: "Videollamada conectada" },
+    { file: "05-genis-despertador.png", label: "Despertador sonando" },
+    { file: "06-genis-pantalla-inicio-llamadas-perdidas.png", label: "Pantalla de inicio + llamadas perdidas" },
+    { file: "07-genis-llamada-emergencia.png", label: "Llamada de emergencia" },
+    { file: "08-genis-nota-audio-paco.png", label: "Nota de audio reproduciéndose" },
+  ],
+  paco: [
+    { file: "02-paco-notificacion-pantalla-inicio.png", label: "Notificación en pantalla de inicio" },
+    { file: "04-paco-videollamada-ipad.png", label: "Videollamada (iPad)" },
+    { file: "09-paco-interfaz-camara.png", label: "Interfaz de cámara" },
+    { file: "10-paco-videollamada-xusa.png", label: "Videollamada con Xusa" },
+  ],
+};
+
 function initials(name) {
   return (name || "?").trim().charAt(0).toUpperCase();
 }
 
 const groupsEl = document.getElementById("gallery-groups");
 
-function thumbCard(roomId, screen) {
-  const imgUrl = `/screens/${roomId}/${screen.file}`;
+function thumbCard(imgUrl, screen) {
   const card = document.createElement("a");
   card.className = "thumb-card";
   card.href = imgUrl;
@@ -56,6 +75,7 @@ async function init() {
   groupsEl.innerHTML = "";
   rooms.forEach((room) => {
     const name = room.label || room.room_id;
+    const rodajeScreens = RODAJE_SCREENS_BY_ROOM[room.room_id];
 
     const section = document.createElement("section");
     section.className = "actor-group";
@@ -73,7 +93,19 @@ async function init() {
       avatarEl.textContent = initials(name);
     }
     const grid = section.querySelector(".thumbs-grid");
-    SCREENS.forEach((screen) => grid.appendChild(thumbCard(room.room_id, screen)));
+    SCREENS.forEach((screen) => grid.appendChild(thumbCard(`/screens/${room.room_id}/${screen.file}`, screen)));
+
+    if (rodajeScreens && rodajeScreens.length > 0) {
+      const subHeading = document.createElement("h3");
+      subHeading.className = "actor-group-subheading";
+      subHeading.textContent = "Capturas del rodaje";
+      section.appendChild(subHeading);
+
+      const rodajeGrid = document.createElement("div");
+      rodajeGrid.className = "thumbs-grid";
+      rodajeScreens.forEach((screen) => rodajeGrid.appendChild(thumbCard(`/screens/rodaje/${screen.file}`, screen)));
+      section.appendChild(rodajeGrid);
+    }
 
     groupsEl.appendChild(section);
   });

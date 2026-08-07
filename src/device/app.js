@@ -36,14 +36,17 @@ document.getElementById("call-hangup-btn").addEventListener("click", () => hideI
 
 const homeScreenOverlayEl = document.getElementById("home-screen-overlay");
 
-// #list-root usa --app-height (con 100dvh de fallback) — ver detalle en
-// device/chat/app.js
+// #list-root usa --app-height + --app-offset-top (con 100dvh de fallback)
+// — ver detalle completo en device/chat/app.js (bug del input saltando
+// hacia arriba al enfocarlo, confirmado en dispositivo real)
 if (window.visualViewport) {
   const setAppHeight = () => {
     document.documentElement.style.setProperty("--app-height", `${window.visualViewport.height}px`);
+    document.documentElement.style.setProperty("--app-offset-top", `${window.visualViewport.offsetTop}px`);
   };
   setAppHeight();
   window.visualViewport.addEventListener("resize", setAppHeight);
+  window.visualViewport.addEventListener("scroll", setAppHeight);
 }
 
 // Pintar con el último skin conocido antes de esperar el fetch real —

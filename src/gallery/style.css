@@ -72,6 +72,15 @@ a { color: var(--accent); }
 .actor-group-avatar { width: 36px; height: 36px; font-size: 14px; }
 .actor-group-header h2 { font-size: 18px; }
 
+.actor-group-subheading {
+  font-size: 12.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 28px 0 14px;
+}
+
 .thumbs-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
